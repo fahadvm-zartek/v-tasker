@@ -85,6 +85,17 @@ test('sidebar includes chat moderation as a parent item with nested routes', asy
   assert.match(sidebarSource, /isActivePath\(child\.href\)/);
 });
 
+test('sidebar hides subcategories by default and expands only the selected category', async () => {
+  const sidebarSource = await readFile(new URL('./Sidebar.tsx', import.meta.url), 'utf8');
+
+  assert.match(sidebarSource, /const \[expandedMenuLabel, setExpandedMenuLabel\] = useState<string \| null>\(null\)/);
+  assert.match(sidebarSource, /const isExpanded = expandedMenuLabel === item\.label/);
+  assert.match(sidebarSource, /onClick=\{\(\) => setExpandedMenuLabel\(isExpanded \? null : item\.label\)\}/);
+  assert.match(sidebarSource, /item\.children && isExpanded \?/);
+  assert.match(sidebarSource, /aria-expanded=\{item\.children \? isExpanded : undefined\}/);
+  assert.match(sidebarSource, /onClick=\{\(\) => setExpandedMenuLabel\(null\)\}/);
+});
+
 test('chat moderation overview is the default active sub-navigation state', async () => {
   const sidebarSource = await readFile(new URL('./Sidebar.tsx', import.meta.url), 'utf8');
 
@@ -195,36 +206,73 @@ test('collapsed sidebar shows icon-only navigation with hover tooltips', async (
 }
 );
 
-test('stat cards display left color accent borders and overview performance metrics', async () => {
+test('stat cards display task and service performance metrics from the reference', async () => {
   const overviewSource = await readFile(new URL('./OverviewDashboard.tsx', import.meta.url), 'utf8');
 
-  assert.match(overviewSource, /TOTAL USERS/);
-  assert.match(overviewSource, /124\.5K/);
-  assert.match(overviewSource, /NEW REGISTRATIONS/);
-  assert.match(overviewSource, /3,240/);
-  assert.match(overviewSource, /ACTIVE USERS/);
-  assert.match(overviewSource, /89\.2K/);
-  assert.match(overviewSource, /ACTIVE SUBSCRIPTIONS/);
-  assert.match(overviewSource, /39\.3K/);
+  for (const text of [
+    'Tasks Posted',
+    '1,284',
+    'Completed Tasks',
+    '946',
+    'Total Payments',
+    '$2,48,650',
+    'Total Commission',
+    '$24,865',
+    'Task Deletion Rate',
+    '6.8%',
+    'Users Requiring Review',
+    '18',
+    'Tasks Without Offers',
+    '142',
+    'Cancellation Rate',
+    'Cancellations Earnings',
+    '$3,210',
+    'Suspended & Reported',
+    'Moderations Detected',
+    '356',
+    'Hard Moderations',
+    '61',
+    'Milestone Products Total',
+    '1,248',
+    'Total Points Granted',
+    '48,500',
+    'Disputes',
+  ]) {
+    assert.match(overviewSource, new RegExp(text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+  }
 });
 
-test('overview dashboard matches screenshot card dimensions and typography', async () => {
+test('overview dashboard uses the reference scrollable analytics layout', async () => {
   const overviewSource = await readFile(new URL('./OverviewDashboard.tsx', import.meta.url), 'utf8');
 
-  assert.match(overviewSource, /text-\[35px\] font-bold leading-\[42px\]/);
-  assert.match(overviewSource, /text-\[18px\] leading-\[22px\] text-\[#4f4b55\]/);
-  assert.match(overviewSource, /h-\[45px\]/);
-  assert.match(overviewSource, /rounded-\[12px\] border border-\[#dfe5ef\] bg-white/);
-  assert.match(overviewSource, /min-h-\[144px\]/);
-  assert.match(overviewSource, /rounded-\[12px\]/);
-  assert.match(overviewSource, /p-6/);
-  assert.match(overviewSource, /text-\[25px\] font-bold leading-8/);
-  assert.match(overviewSource, /grid-cols-\[minmax\(0,2fr\)_minmax\(336px,1fr\)\]/);
-  assert.match(overviewSource, /min-h-\[436px\]/);
-  assert.match(overviewSource, /text-\[22px\] font-bold leading-7/);
-  assert.match(overviewSource, /h-\[96px\]/);
-  assert.match(overviewSource, /h-\[176px\] w-\[176px\]/);
+  assert.match(overviewSource, /max-h-\[calc\(100vh-94px\)\] overflow-y-auto/);
+  assert.match(overviewSource, /grid-cols-\[repeat\(5,minmax\(0,1fr\)\)\]/);
+  assert.match(overviewSource, /xl:grid-cols-\[minmax\(0,1fr\)_minmax\(320px,0\.42fr\)\]/);
+  assert.match(overviewSource, /<TasksTable(?:\s+className="h-full")?\s*\/>/);
+  assert.match(overviewSource, /Top Services \(Above 25%\)/);
+  assert.match(overviewSource, /Top Category/);
+  assert.match(overviewSource, /All Categories/);
+  assert.match(overviewSource, /All Services/);
+  assert.match(overviewSource, /All Statuses/);
+  assert.match(overviewSource, /Today/);
+  assert.match(overviewSource, /24 Oct, 2023/);
+  assert.match(overviewSource, /Export Report/);
   assert.doesNotMatch(overviewSource, /zoom:|transform: scale|scale-\[/);
+});
+
+test('tasks posted table fits its rows without extra bottom whitespace', async () => {
+  const [overviewSource, tasksTableSource] = await Promise.all([
+    readFile(new URL('./OverviewDashboard.tsx', import.meta.url), 'utf8'),
+    readFile(new URL('./TasksTable.tsx', import.meta.url), 'utf8'),
+  ]);
+
+  assert.doesNotMatch(overviewSource, /items-stretch/);
+  assert.match(overviewSource, /xl:grid-cols-\[minmax\(0,1fr\)_minmax\(320px,0\.42fr\)\]/);
+  assert.match(overviewSource, /<div className="min-w-0">[\s\S]*<TasksTable \/>/);
+  assert.match(overviewSource, /<aside className="space-y-5">/);
+  assert.doesNotMatch(overviewSource, /<TasksTable className="h-full" \/>/);
+  assert.match(tasksTableSource, /className\?: string/);
+  assert.match(tasksTableSource, /<section className=\{`ui-card \$\{className \?\? ''\}`\}>/);
 });
 
 test('dashboard adds minimal reduced-motion-safe animations', async () => {
@@ -247,18 +295,29 @@ test('dashboard adds minimal reduced-motion-safe animations', async () => {
 }
 );
 
-test('overview dashboard reproduces gender distribution donut chart and user segment breakdown', async () => {
-  const overviewSource = await readFile(new URL('./OverviewDashboard.tsx', import.meta.url), 'utf8');
+test('overview dashboard reproduces task tables and service breakdown panels', async () => {
+  const [overviewSource, tasksTableSource] = await Promise.all([
+    readFile(new URL('./OverviewDashboard.tsx', import.meta.url), 'utf8'),
+    readFile(new URL('./TasksTable.tsx', import.meta.url), 'utf8'),
+  ]);
 
-  assert.match(overviewSource, /User Segment Breakdown/);
-  assert.match(overviewSource, /Free Users/);
-  assert.match(overviewSource, /Paid Users/);
-  assert.match(overviewSource, /Gifted/);
-  assert.match(overviewSource, /Expired \/ Cancelled/);
-  assert.match(overviewSource, /Gender Distribution/);
-  assert.match(overviewSource, /65%/);
-  assert.match(overviewSource, /Female \(65%\)/);
-  assert.match(overviewSource, /Male \(35%\)/);
+  for (const text of [
+    'House Cleaning',
+    'Plumbing Repair',
+    'Electrical Work',
+    'In Person',
+    'Professional',
+    'Online',
+    'Others',
+    'Open Dispute',
+    'Closed Dispute',
+  ]) {
+    assert.match(overviewSource, new RegExp(text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+  }
+
+  for (const text of ['#TSK-4412', 'Regular Cleaning', 'Alexander Sterling']) {
+    assert.match(tasksTableSource, new RegExp(text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+  }
 });
 
 test('dashboard components use the shared brand color tokens', async () => {

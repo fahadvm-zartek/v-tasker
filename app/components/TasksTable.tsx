@@ -1,5 +1,9 @@
 import React from 'react';
 
+interface TasksTableProps {
+  className?: string;
+}
+
 interface Task {
   id: string;
   date: string;
@@ -64,9 +68,9 @@ const statusStyles = {
   Cancelled: 'bg-[#ffd7d4] text-[#b42318]',
 };
 
-const TasksTable = () => {
+const TasksTable: React.FC<TasksTableProps> = ({ className }) => {
   return (
-    <section className="ui-card">
+    <section className={`ui-card ${className ?? ''}`}>
       <div className="flex h-[37px] items-center justify-between px-3">
         <h2 className="text-[18px] font-bold text-[#202b3d]">Tasks Posted</h2>
         <a href="#" className="ui-link text-[14px]">
