@@ -62,6 +62,27 @@ test('sidebar exposes service categories with a category icon', async () => {
   assert.match(sidebarSource, /label: 'Service Categories', href: '\/service-categories', icon: Tags/);
 });
 
+test('sidebar exposes tasks as a main category with a clipboard icon', async () => {
+  const sidebarSource = await readFile(new URL('./Sidebar.tsx', import.meta.url), 'utf8');
+
+  assert.match(sidebarSource, /ClipboardList/);
+  assert.match(sidebarSource, /label: 'Tasks', href: '\/tasks', icon: ClipboardList/);
+});
+
+test('sidebar exposes payments as a main category with a payment icon', async () => {
+  const sidebarSource = await readFile(new URL('./Sidebar.tsx', import.meta.url), 'utf8');
+
+  assert.match(sidebarSource, /CreditCard/);
+  assert.match(sidebarSource, /label: 'Payments', href: '\/payment', icon: CreditCard/);
+});
+
+test('sidebar exposes rewards as a main category with a gift icon', async () => {
+  const sidebarSource = await readFile(new URL('./Sidebar.tsx', import.meta.url), 'utf8');
+
+  assert.match(sidebarSource, /Gift/);
+  assert.match(sidebarSource, /label: 'Rewards', href: '\/rewards-platform', icon: Gift/);
+});
+
 test('sidebar includes chat moderation as a parent item with nested routes', async () => {
   const sidebarSource = await readFile(new URL('./Sidebar.tsx', import.meta.url), 'utf8');
 

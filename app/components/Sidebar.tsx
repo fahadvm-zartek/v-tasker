@@ -6,6 +6,9 @@ import React, { useEffect, useState } from 'react';
 import {
   ChevronLeft,
   ChevronRight,
+  ClipboardList,
+  CreditCard,
+  Gift,
   LayoutGrid,
   MapPin,
   MessageSquareWarning,
@@ -38,6 +41,9 @@ type MenuItem = {
 
 const menuItems: MenuItem[] = [
   { label: 'Dashboard', href: '/', icon: LayoutGrid },
+  { label: 'Tasks', href: '/tasks', icon: ClipboardList },
+  { label: 'Payments', href: '/payment', icon: CreditCard },
+  { label: 'Rewards', href: '/rewards-platform', icon: Gift },
   { label: 'Users', href: '/users', icon: Users },
   { label: 'Reports', href: '/reports', icon: TriangleAlert },
   { label: 'Locations', href: '/locations', icon: MapPin },
