@@ -81,19 +81,20 @@ test('sidebar includes chat moderation as a parent item with nested routes', asy
     assert.match(sidebarSource, new RegExp(text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
   }
 
-  assert.match(sidebarSource, /item\.children\?\.map/);
+  assert.match(sidebarSource, /item\.children\.map/);
   assert.match(sidebarSource, /isActivePath\(child\.href\)/);
 });
 
-test('sidebar hides subcategories by default and expands only the selected category', async () => {
+test('sidebar shows chat moderation subcategories only while the section is active', async () => {
   const sidebarSource = await readFile(new URL('./Sidebar.tsx', import.meta.url), 'utf8');
 
-  assert.match(sidebarSource, /const \[expandedMenuLabel, setExpandedMenuLabel\] = useState<string \| null>\(null\)/);
-  assert.match(sidebarSource, /const isExpanded = expandedMenuLabel === item\.label/);
-  assert.match(sidebarSource, /onClick=\{\(\) => setExpandedMenuLabel\(isExpanded \? null : item\.label\)\}/);
-  assert.match(sidebarSource, /item\.children && isExpanded \?/);
-  assert.match(sidebarSource, /aria-expanded=\{item\.children \? isExpanded : undefined\}/);
-  assert.match(sidebarSource, /onClick=\{\(\) => setExpandedMenuLabel\(null\)\}/);
+  assert.match(sidebarSource, /const shouldShowChildren = Boolean\(item\.children && isActive\)/);
+  assert.match(sidebarSource, /shouldShowChildren \? 'grid-rows-\[1fr\] opacity-100' : 'grid-rows-\[0fr\] opacity-0'/);
+  assert.match(sidebarSource, /sidebar-subnav grid transition-\[grid-template-rows,opacity\]/);
+  assert.doesNotMatch(sidebarSource, /expandedMenuLabel/);
+  assert.doesNotMatch(sidebarSource, /setExpandedMenuLabel/);
+  assert.doesNotMatch(sidebarSource, /aria-expanded=\{item\.children/);
+  assert.doesNotMatch(sidebarSource, /sidebar-badge shrink-0 transition-transform/);
 });
 
 test('chat moderation overview is the default active sub-navigation state', async () => {

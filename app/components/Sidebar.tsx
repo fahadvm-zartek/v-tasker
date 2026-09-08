@@ -58,7 +58,6 @@ const menuItems: MenuItem[] = [
 const Sidebar = () => {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(getInitialSidebarCollapsed);
-  const [expandedMenuLabel, setExpandedMenuLabel] = useState<string | null>(null);
   const ToggleIcon = isCollapsed ? ChevronRight : ChevronLeft;
 
   const isActivePath = (href: string) => {
@@ -114,7 +113,7 @@ const Sidebar = () => {
           {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive = isActivePath(item.href) || item.children?.some((child) => isActivePath(child.href));
-            const isExpanded = expandedMenuLabel === item.label;
+            const shouldShowChildren = Boolean(item.children && isActive);
 
             const itemClass = isActive
               ? 'sidebar-nav-link group relative flex h-[42px] items-center justify-between bg-[#eef2ff] px-4 text-[14px] font-medium text-[#1B3061] transition-all duration-150'
@@ -122,118 +121,81 @@ const Sidebar = () => {
 
             return (
               <div key={item.label} className="sidebar-nav-group">
-                {item.children ? (
-                  <button
-                    type="button"
-                    className={itemClass}
-                    aria-current={isActive ? 'page' : undefined}
-                    aria-expanded={item.children ? isExpanded : undefined}
-                    onClick={() => setExpandedMenuLabel(isExpanded ? null : item.label)}
-                  >
-                    {isActive && (
-                      <span
-                        aria-hidden="true"
-                        className="absolute bottom-0 left-0 top-0 w-1 bg-[#1B3061] "
-                      />
-                    )}
-
-                    <div className="sidebar-nav-main flex items-center gap-[14px]">
-                      <Icon
-                        size={19}
-                        strokeWidth={isActive ? 2.25 : 1.85}
-                        className={`shrink-0 transition-colors ${isActive ? 'text-[#1B3061]' : 'text-[#4f5160] group-hover:text-[#1B3061]'
-                          }`}
-                      />
-                      <span
-                        className="sidebar-label w-[148px] truncate overflow-hidden whitespace-nowrap opacity-100 transition-all duration-200"
-                      >
-                        {item.label}
-                      </span>
-                    </div>
-
-                    <ChevronRight
-                      size={14}
-                      strokeWidth={2.2}
-                      className={`sidebar-badge shrink-0 transition-transform duration-150 ${isExpanded ? 'rotate-90' : ''}`}
+                <Link
+                  href={item.href}
+                  className={itemClass}
+                  aria-current={isActive ? 'page' : undefined}
+                >
+                  {isActive && (
+                    <span
+                      aria-hidden="true"
+                      className="absolute bottom-0 left-0 top-0 w-1 bg-[#1B3061] "
                     />
+                  )}
 
+                  <div className="sidebar-nav-main flex items-center gap-[14px]">
+                    <Icon
+                      size={19}
+                      strokeWidth={isActive ? 2.25 : 1.85}
+                      className={`shrink-0 transition-colors ${isActive ? 'text-[#1B3061]' : 'text-[#4f5160] group-hover:text-[#1B3061]'
+                        }`}
+                    />
                     <span
-                      className="sidebar-tooltip pointer-events-none absolute left-full top-1/2 ml-3 -translate-y-1/2 rounded-[7px] border border-[#dfe5ef] bg-white px-3 py-1.5 text-[12px] font-semibold text-[#1B3061] opacity-0 shadow-[0_8px_20px_rgba(27,48,97,0.16)] transition-opacity duration-150 group-hover:opacity-100"
-                      role="tooltip"
+                      className="sidebar-label w-[148px] truncate overflow-hidden whitespace-nowrap opacity-100 transition-all duration-200"
                     >
                       {item.label}
                     </span>
-                  </button>
-                ) : (
-                  <Link
-                    href={item.href}
-                    className={itemClass}
-                    aria-current={isActive ? 'page' : undefined}
-                    onClick={() => setExpandedMenuLabel(null)}
+                  </div>
+
+                  {item.badge && (
+                    <span className="sidebar-badge rounded-full bg-[#f5f6f8] px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.08em] text-[#7c7c88]">
+                      {item.badge}
+                    </span>
+                  )}
+
+                  <span
+                    className="sidebar-tooltip pointer-events-none absolute left-full top-1/2 ml-3 -translate-y-1/2 rounded-[7px] border border-[#dfe5ef] bg-white px-3 py-1.5 text-[12px] font-semibold text-[#1B3061] opacity-0 shadow-[0_8px_20px_rgba(27,48,97,0.16)] transition-opacity duration-150 group-hover:opacity-100"
+                    role="tooltip"
                   >
-                    {isActive && (
-                      <span
-                        aria-hidden="true"
-                        className="absolute bottom-0 left-0 top-0 w-1 bg-[#1B3061] "
-                      />
-                    )}
+                    {item.label}
+                  </span>
+                </Link>
+                {item.children ? (
+                  <div
+                    className={`sidebar-subnav grid transition-[grid-template-rows,opacity] duration-200 ease-out ${
+                      shouldShowChildren ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+                    }`}
+                    aria-hidden={!shouldShowChildren}
+                  >
+                    <div className="overflow-hidden py-1.5 pl-[52px] pr-3">
+                      {item.children.map((child) => {
+                        const isChildActive = isActivePath(child.href);
 
-                    <div className="sidebar-nav-main flex items-center gap-[14px]">
-                      <Icon
-                        size={19}
-                        strokeWidth={isActive ? 2.25 : 1.85}
-                        className={`shrink-0 transition-colors ${isActive ? 'text-[#1B3061]' : 'text-[#4f5160] group-hover:text-[#1B3061]'
-                          }`}
-                      />
-                      <span
-                        className="sidebar-label w-[148px] truncate overflow-hidden whitespace-nowrap opacity-100 transition-all duration-200"
-                      >
-                        {item.label}
-                      </span>
+                        return (
+                          <Link
+                            key={child.label}
+                            href={child.href}
+                            tabIndex={shouldShowChildren ? undefined : -1}
+                            className={`sidebar-subnav-link relative flex h-8 items-center rounded-[6px] px-3 pl-4 text-[12px] font-medium transition-colors ${
+                              isChildActive
+                                ? 'bg-[#f3f6ff] text-[#1B3061] shadow-[inset_0_0_0_1px_rgba(27,48,97,0.04)]'
+                                : 'text-[#6f7280] hover:bg-[#f7f8fb] hover:text-[#1B3061]'
+                            }`}
+                            aria-current={isChildActive ? 'page' : undefined}
+                          >
+                            {isChildActive ? (
+                              <span
+                                aria-hidden="true"
+                                className="absolute bottom-1.5 left-0 top-1.5 w-0.5 rounded-full bg-[#1B3061]"
+                              />
+                            ) : null}
+                            <span className="sidebar-label truncate overflow-hidden whitespace-nowrap opacity-100 transition-all duration-200">
+                              {child.label}
+                            </span>
+                          </Link>
+                        );
+                      })}
                     </div>
-
-                    {item.badge && (
-                      <span className="sidebar-badge rounded-full bg-[#f5f6f8] px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.08em] text-[#7c7c88]">
-                        {item.badge}
-                      </span>
-                    )}
-
-                    <span
-                      className="sidebar-tooltip pointer-events-none absolute left-full top-1/2 ml-3 -translate-y-1/2 rounded-[7px] border border-[#dfe5ef] bg-white px-3 py-1.5 text-[12px] font-semibold text-[#1B3061] opacity-0 shadow-[0_8px_20px_rgba(27,48,97,0.16)] transition-opacity duration-150 group-hover:opacity-100"
-                      role="tooltip"
-                    >
-                      {item.label}
-                    </span>
-                  </Link>
-                )}
-                {item.children && isExpanded ? (
-                  <div className="sidebar-subnav py-1.5 pl-[52px] pr-3">
-                    {item.children?.map((child) => {
-                      const isChildActive = isActivePath(child.href);
-
-                      return (
-                        <Link
-                          key={child.label}
-                          href={child.href}
-                          className={`sidebar-subnav-link relative flex h-8 items-center rounded-[6px] px-3 pl-4 text-[12px] font-medium transition-colors ${
-                            isChildActive
-                              ? 'bg-[#f3f6ff] text-[#1B3061] shadow-[inset_0_0_0_1px_rgba(27,48,97,0.04)]'
-                              : 'text-[#6f7280] hover:bg-[#f7f8fb] hover:text-[#1B3061]'
-                          }`}
-                          aria-current={isChildActive ? 'page' : undefined}
-                        >
-                          {isChildActive ? (
-                            <span
-                              aria-hidden="true"
-                              className="absolute bottom-1.5 left-0 top-1.5 w-0.5 rounded-full bg-[#1B3061]"
-                            />
-                          ) : null}
-                          <span className="sidebar-label truncate overflow-hidden whitespace-nowrap opacity-100 transition-all duration-200">
-                            {child.label}
-                          </span>
-                        </Link>
-                      );
-                    })}
                   </div>
                 ) : null}
               </div>
