@@ -7,13 +7,18 @@ export { default as LockedOverlay } from './LockedOverlay';
 export { default as DashboardPlaceholderPage } from './DashboardPlaceholderPage';
 export { default as OverviewDashboard } from './OverviewDashboard';
 export {
+  DashboardIconButton,
   DashboardMetricCard,
+  DashboardPageHeader,
   DashboardPageShell,
+  DashboardPagination,
   DashboardPanel,
   DashboardPrimaryButton,
   DashboardSearchField,
   DashboardSecondaryButton,
   DashboardSelectButton,
+  DashboardTableShell,
   cn,
+  dashboardButtonClass,
   dashboardStatusBadgeClass,
 } from './dashboard-ui';

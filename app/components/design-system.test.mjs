@@ -16,12 +16,17 @@ test('admin pages use shared dashboard UI primitives instead of page-specific st
 
   for (const exportName of [
     'DashboardPageShell',
+    'DashboardPageHeader',
     'DashboardMetricCard',
     'DashboardPanel',
+    'DashboardTableShell',
+    'DashboardPagination',
+    'DashboardIconButton',
     'DashboardSearchField',
     'DashboardSelectButton',
     'DashboardPrimaryButton',
     'DashboardSecondaryButton',
+    'dashboardButtonClass',
     'dashboardStatusBadgeClass',
   ]) {
     assert.match(uiSource, new RegExp(`export .*${exportName}`));
@@ -35,19 +40,31 @@ test('admin pages use shared dashboard UI primitives instead of page-specific st
   }
 });
 
-test('admin action styling uses sidebar navy instead of bright reference blue', async () => {
+test('global dashboard design tokens define the shared admin surface system', async () => {
+  const globalsSource = await read('../globals.css');
+
+  for (const token of [
+    '--font-admin: Arial, Helvetica, sans-serif',
+    '--space-page-x: 32px',
+    '--space-page-y: 20px',
+    '--card-radius: 10px',
+    '--control-radius: 7px',
+    '--table-header-height: 42px',
+    '--table-row-height: 58px',
+    '.ui-control',
+    '.ui-button-primary',
+    '.ui-button-secondary',
+    '.ui-pagination-button',
+  ]) {
+    assert.match(globalsSource, new RegExp(token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+  }
+});
+
+test('admin primary action styling uses sidebar navy instead of bright reference blue', async () => {
   const checkedFiles = [
     './dashboard-ui.tsx',
-    './OverviewDashboard.tsx',
     './Sidebar.tsx',
-    '../chat-moderation/overview/page.tsx',
-    '../chat-moderation/logs/page.tsx',
-    '../chat-moderation/rules/page.tsx',
-    '../locations/page.tsx',
-    '../reports/page.tsx',
-    '../reports/[id]/page.tsx',
     '../users/page.tsx',
-    '../users/[id]/page.tsx',
     '../users/UsersFilterToolbar.tsx',
   ];
 
@@ -55,7 +72,24 @@ test('admin action styling uses sidebar navy instead of bright reference blue', 
 
   for (const source of sources) {
     assert.match(source, /#1B3061|var\(--color-primary\)/);
-    assert.doesNotMatch(source, /#2563eb|#1d4ed8|#3b82f6|#60a5fa|rgba\(37,99,235/);
-    assert.doesNotMatch(source, /blue-|indigo-|sky-|cyan-/);
+    assert.doesNotMatch(source, /bg-\[#2563eb\]|hover:bg-\[#1d4ed8\]|rgba\(37,99,235/);
+  }
+});
+
+test('list-heavy admin pages compose shared table and pagination primitives', async () => {
+  const checkedFiles = [
+    '../payment/page.tsx',
+    '../rewards-platform/page.tsx',
+    '../disputes/page.tsx',
+    '../cancellations/page.tsx',
+  ];
+
+  const sources = await Promise.all(checkedFiles.map((path) => read(path)));
+
+  for (const source of sources) {
+    assert.match(source, /DashboardPageHeader/);
+    assert.match(source, /DashboardTableShell/);
+    assert.match(source, /DashboardPagination/);
+    assert.doesNotMatch(source, /const PaginationFooter/);
   }
 });

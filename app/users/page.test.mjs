@@ -58,11 +58,18 @@ test('users page includes the reference filters, export action, rows, and pagina
 });
 
 test('users page uses dashboard chrome and responsive table styling', async () => {
-  const source = await readUsersPage();
+  const [source, sharedUiSource] = await Promise.all([
+    readUsersPage(),
+    readFile(new URL('../components/dashboard-ui.tsx', import.meta.url), 'utf8'),
+  ]);
 
-  assert.match(source, /<Sidebar\s*\/>/);
-  assert.match(source, /<Header\s*\/>/);
-  assert.match(source, /pl-\[var\(--layout-sidebar-current\)\]/);
+  assert.match(source, /DashboardPageShell/);
+  assert.match(source, /DashboardMetricCard/);
+  assert.match(source, /DashboardPanel/);
+  assert.match(source, /DashboardPagination/);
+  assert.doesNotMatch(source, /<Sidebar\s*\/>/);
+  assert.doesNotMatch(source, /<Header\s*\/>/);
+  assert.match(sharedUiSource, /pl-\[var\(--layout-sidebar-current\)\]/);
   assert.match(source, /overflow-x-auto/);
   assert.match(source, /grid-cols-\[repeat\(auto-fit,minmax\(180px,1fr\)\)\]/);
   assert.doesNotMatch(source, /DashboardPlaceholderPage/);
@@ -139,7 +146,7 @@ test('users dropdowns are layered above the table and are not clipped by parent 
     readFilterToolbar(),
   ]);
 
-  assert.match(pageSource, /<section className="relative overflow-visible/);
+  assert.match(pageSource, /<DashboardPanel className="relative overflow-visible/);
   assert.doesNotMatch(pageSource, /<section className="overflow-hidden/);
   assert.match(toolbarSource, /relative z-\[60\]/);
   assert.match(toolbarSource, /z-\[80\]/);

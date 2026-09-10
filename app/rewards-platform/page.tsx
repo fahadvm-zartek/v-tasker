@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, type ComponentType, type ReactNode } from 'react';
+import { Suspense, useEffect, useState, type ComponentType, type ReactNode } from 'react';
+import { useSearchParams } from 'next/navigation';
 import {
   Award,
   CalendarDays,
@@ -22,12 +23,15 @@ import {
 } from 'lucide-react';
 import {
   DashboardMetricCard,
+  DashboardPageHeader,
   DashboardPageShell,
+  DashboardPagination,
   DashboardPanel,
   DashboardPrimaryButton,
   DashboardSearchField,
   DashboardSecondaryButton,
   DashboardSelectButton,
+  DashboardTableShell,
   cn,
   dashboardStatusBadgeClass,
 } from '../components';
@@ -380,10 +384,24 @@ const RewardsTab = ({
     <Icon size={14} strokeWidth={2.2} />
     {children}
     {active ? (
-      <span aria-hidden="true" className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#2563eb]" />
+      <span aria-hidden="true" className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#1B3061]" />
     ) : null}
   </button>
 );
+
+const RewardsTabQuerySync = ({ onTabRequested }: { onTabRequested: (tab: RewardsTabKey) => void }) => {
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const requestedTab = searchParams.get('tab');
+
+    if (requestedTab === 'milestones' || requestedTab === 'points') {
+      queueMicrotask(() => onTabRequested(requestedTab));
+    }
+  }, [onTabRequested, searchParams]);
+
+  return null;
+};
 
 const RewardAvatar = ({ initials, className }: { initials: string; className: string }) => (
   <span
@@ -419,50 +437,15 @@ const RewardDetailBadge = ({ row }: { row: RewardRow }) => (
   </div>
 );
 
-const PaginationFooter = () => (
+const RewardsTableFooter = () => (
   <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-[#edf1f7] px-5 py-4">
     <p className="text-[12px] font-medium text-[#64748b]">Showing 1 to 5 of 12,430 entries</p>
-    <div className="flex items-center gap-2">
-      <button
-        type="button"
-        aria-label="Previous page"
-        className="flex h-8 w-8 items-center justify-center rounded-[5px] border border-[#dbe4ef] text-[#94a3b8]"
-      >
-        <ChevronDown size={14} strokeWidth={2.2} className="rotate-90" />
-      </button>
-      <button
-        type="button"
-        aria-current="page"
-        className="h-8 min-w-8 rounded-[5px] bg-[#0457cf] px-3 text-[12px] font-bold text-white"
-      >
-        1
-      </button>
-      <button
-        type="button"
-        className="h-8 min-w-8 rounded-[5px] border border-[#dbe4ef] px-3 text-[12px] font-medium text-[#475569]"
-      >
-        2
-      </button>
-      <button
-        type="button"
-        className="h-8 min-w-8 rounded-[5px] border border-[#dbe4ef] px-3 text-[12px] font-medium text-[#475569]"
-      >
-        3
-      </button>
-      <span className="px-1 text-[12px] font-bold text-[#94a3b8]">...</span>
-      <button
-        type="button"
-        aria-label="Next page"
-        className="flex h-8 w-8 items-center justify-center rounded-[5px] border border-[#dbe4ef] text-[#94a3b8]"
-      >
-        <ChevronDown size={14} strokeWidth={2.2} className="-rotate-90" />
-      </button>
-    </div>
+    <DashboardPagination pages={['1', '2', '3', '...']} label="Rewards pagination" />
   </footer>
 );
 
 const AllRewardsPanel = () => (
-  <DashboardPanel className="mt-5 rounded-[8px]">
+  <DashboardTableShell className="mt-5">
     <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#edf1f7] px-5 py-5">
       <div>
         <h2 className="text-[18px] font-bold leading-6 text-[#202b3d]">All Transactions & Claims</h2>
@@ -570,7 +553,7 @@ const AllRewardsPanel = () => (
                   <button
                     type="button"
                     aria-label={`View reward transaction ${index + 1}`}
-                    className="ml-auto flex h-7 w-7 items-center justify-center rounded-full text-[#94a3b8] transition-colors hover:bg-[#eef2ff] hover:text-[#2563eb]"
+                    className="ml-auto flex h-7 w-7 items-center justify-center rounded-full text-[#94a3b8] transition-colors hover:bg-[#eef2ff] hover:text-[#1B3061]"
                   >
                     <Eye size={14} strokeWidth={2.1} />
                   </button>
@@ -582,12 +565,12 @@ const AllRewardsPanel = () => (
       </table>
     </div>
 
-    <PaginationFooter />
-  </DashboardPanel>
+    <RewardsTableFooter />
+  </DashboardTableShell>
 );
 
 const PointsActivityPanel = () => (
-  <DashboardPanel className="mt-5 rounded-[8px]">
+  <DashboardTableShell className="mt-5">
     <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#edf1f7] px-5 py-4">
       <h2 className="text-[14px] font-bold leading-5 text-[#202b3d]">Points Activity</h2>
       <DashboardPrimaryButton className="h-9 px-4">
@@ -652,8 +635,8 @@ const PointsActivityPanel = () => (
       </table>
     </div>
 
-    <PaginationFooter />
-  </DashboardPanel>
+    <RewardsTableFooter />
+  </DashboardTableShell>
 );
 
 const MilestonesPanel = ({ onOpenAddTier }: { onOpenAddTier: () => void }) => (
@@ -1063,31 +1046,53 @@ const RewardsConfigurationPanel = ({ onOpenAddTier }: { onOpenAddTier: () => voi
 );
 
 export default function RewardsPlatformPage() {
-  const [activeTab, setActiveTab] = useState<RewardsTabKey>('all');
+  const [activeTab, setActiveTab] = useState<RewardsTabKey>(() => {
+    if (typeof window === 'undefined') {
+      return 'all';
+    }
+
+    const requestedTab = new URLSearchParams(window.location.search).get('tab');
+
+    if (requestedTab === 'milestones' || requestedTab === 'points') {
+      return requestedTab;
+    }
+
+    return 'all';
+  });
   const [isAddTierModalOpen, setIsAddTierModalOpen] = useState(false);
+
+  useEffect(() => {
+    const requestedTab = new URLSearchParams(window.location.search).get('tab');
+
+    if (requestedTab === 'milestones' || requestedTab === 'points') {
+      queueMicrotask(() => setActiveTab(requestedTab));
+    }
+  }, []);
+
   const activeMetrics =
     activeTab === 'points' ? pointMetrics : activeTab === 'milestones' ? rewardMetrics.slice(0, 3) : rewardMetrics;
 
   return (
     <DashboardPageShell contentClassName="px-0 pb-10 pt-0">
+      <Suspense fallback={null}>
+        <RewardsTabQuerySync onTabRequested={setActiveTab} />
+      </Suspense>
       <div className="animate-dashboard-entry">
-        <header className="flex flex-wrap items-start justify-between gap-4 border-b border-[#dfe6f0] px-0 pb-4 pt-4">
-          <div className="px-0">
-            <h1 className="text-[24px] font-bold leading-8 text-[#202b3d]">Rewards Platform</h1>
-            <p className="mt-1 text-[13px] font-medium leading-5 text-[#64748b]">
-              Manage loyalty points, milestones, and user rewards programmatically.
-            </p>
-          </div>
-          <button
-            type="button"
-            aria-label="Configure rewards platform"
-            onClick={() => setActiveTab('configure')}
-            className="inline-flex h-9 items-center justify-center gap-2 rounded-[5px] border border-[#0457cf] bg-white px-3 text-[13px] font-semibold text-[#0457cf] leading-none transition-colors hover:bg-[#eef4ff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0457cf]/20"
-          >
-            <Settings2 size={16} strokeWidth={2.2} />
-            Configure
-          </button>
-        </header>
+        <DashboardPageHeader
+          title="Rewards Platform"
+          description="Manage loyalty points, milestones, and user rewards programmatically."
+          className="border-b border-[#dfe6f0] pb-4 pt-4"
+          action={
+            <DashboardSecondaryButton
+              aria-label="Configure rewards platform"
+              onClick={() => setActiveTab('configure')}
+              className="h-9 border-[#0457cf] px-3 text-[13px] text-[#0457cf] hover:bg-[#eef4ff]"
+            >
+              <Settings2 size={16} strokeWidth={2.2} />
+              Configure
+            </DashboardSecondaryButton>
+          }
+        />
 
         <nav className="flex border-b border-[#dfe6f0]" aria-label="Rewards sections">
           <RewardsTab active={activeTab === 'all'} icon={Grid2X2} onClick={() => setActiveTab('all')}>

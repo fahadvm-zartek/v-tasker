@@ -54,6 +54,9 @@ test('reward claim detail page supports read-only fulfillment detail states', as
     'Completed',
     'Delivered',
     'Reward Fulfillment Detail - #',
+    "contentClassName={isPending ? 'px-5 pb-10 pt-5' : 'flex min-h-[calc(100vh-76px)] items-center justify-center bg-[#7d8793] px-4 py-4'}",
+    'max-w-[860px]',
+    'min-h-[560px]',
     'Premium Fuel Voucher',
     'Milestone 2 Achieved (200 Tasks Completed)',
     'VALUE',
@@ -80,6 +83,7 @@ test('reward claim detail page supports read-only fulfillment detail states', as
     'Download Invoice',
     'Contact User',
     'Update Status',
+    'href="/rewards-platform?tab=milestones"',
   ]) {
     assert.match(source, new RegExp(text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
   }

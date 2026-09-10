@@ -146,15 +146,163 @@ export default async function RewardClaimDetailPage({
   const claim = claimDetails[normalizedClaimId] ?? claimDetails['CLM-8824'];
   const isPending = claim.status === 'Pending';
 
+  if (!isPending) {
+    return (
+      <DashboardPageShell contentClassName={isPending ? 'px-5 pb-10 pt-5' : 'flex min-h-[calc(100vh-76px)] items-center justify-center bg-[#7d8793] px-4 py-4'}>
+        <article className="flex min-h-[560px] w-full max-w-[860px] flex-col overflow-hidden rounded-[10px] border border-[#d8e0ec] bg-white shadow-[0_24px_54px_rgba(15,23,42,0.26)]">
+          <header className="flex items-center justify-between gap-4 border-b border-[#e4eaf2] px-5 py-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="text-[18px] font-bold leading-6 text-[#202b3d]">
+                Reward Fulfillment Detail - #{claim.claimId}
+              </h1>
+              <span className={dashboardStatusBadgeClass(statusTone[claim.status])}>{claim.status}</span>
+            </div>
+            <Link
+              href="/rewards-platform?tab=milestones"
+              aria-label="Close reward fulfillment detail"
+              className="flex h-8 w-8 items-center justify-center rounded-full text-[#64748b] transition-colors hover:bg-[#eef2ff] hover:text-[#172033]"
+            >
+              <X size={18} strokeWidth={2.2} />
+            </Link>
+          </header>
+
+          <div className="grid flex-1 gap-4 px-5 py-4 lg:grid-cols-[minmax(0,1.35fr)_minmax(260px,0.9fr)]">
+            <div className="space-y-4">
+              <section className="rounded-[8px] border border-[#dbe4ef] bg-white p-4">
+                <div className="flex items-center gap-3">
+                  <span className="flex h-11 w-11 items-center justify-center rounded-[7px] bg-[#eef3ff] text-[#0457cf]">
+                    <Gift size={20} strokeWidth={2.2} />
+                  </span>
+                  <div>
+                    <h2 className="text-[16px] font-bold text-[#202b3d]">{claim.reward}</h2>
+                    <p className="mt-0.5 text-[11px] font-medium text-[#64748b]">{claim.milestone}</p>
+                  </div>
+                </div>
+                <dl className="mt-4 grid grid-cols-2 border-t border-[#dbe4ef] pt-3">
+                  <div>
+                    <dt className="text-[10px] font-bold uppercase tracking-[0.04em] text-[#8a98ad]">VALUE</dt>
+                    <dd className="mt-1 text-[12px] font-semibold text-[#172033]">{claim.value}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-[10px] font-bold uppercase tracking-[0.04em] text-[#8a98ad]">VOUCHER CODE</dt>
+                    <dd className="mt-1 inline-flex rounded-[5px] bg-[#eef3ff] px-2.5 py-1 text-[11px] font-bold text-[#475569]">
+                      {claim.voucherCode}
+                    </dd>
+                  </div>
+                </dl>
+              </section>
+
+              <section className="rounded-[8px] border border-[#dbe4ef] bg-white p-4">
+                <h2 className="border-b border-[#dbe4ef] pb-2 text-[10px] font-bold uppercase tracking-[0.04em] text-[#8a98ad]">
+                  RECIPIENT INFORMATION
+                </h2>
+                <div className="mt-4 flex items-start gap-3">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#dbeafe] text-[12px] font-bold text-[#2563eb]">
+                    JD
+                  </span>
+                  <div>
+                    <p className="text-[16px] font-bold text-[#202b3d]">{claim.recipient}</p>
+                    <p className="mt-0.5 text-[11px] font-medium text-[#64748b]">{claim.account}</p>
+                  </div>
+                </div>
+                <div className="mt-4 space-y-2 text-[12px] font-medium text-[#334155]">
+                  <p className="flex items-center gap-3">
+                    <Mail size={15} strokeWidth={2.2} className="text-[#64748b]" />
+                    {claim.email}
+                  </p>
+                  <p className="flex items-center gap-3">
+                    <Phone size={15} strokeWidth={2.2} className="text-[#64748b]" />
+                    {claim.phone}
+                  </p>
+                </div>
+              </section>
+            </div>
+
+            <div className="space-y-4">
+              <section className="rounded-[8px] border border-[#dbe4ef] bg-white p-4">
+                <h2 className="flex items-center justify-between border-b border-[#dbe4ef] pb-2 text-[10px] font-bold uppercase tracking-[0.04em] text-[#8a98ad]">
+                  SHIPPING DETAILS
+                  <Truck size={15} strokeWidth={2.2} className="text-[#64748b]" />
+                </h2>
+                <dl className="mt-3 space-y-3">
+                  <div>
+                    <dt className="text-[11px] font-medium text-[#8a98ad]">Delivery Address</dt>
+                    <dd className="mt-1 text-[12px] font-medium leading-4 text-[#172033]">
+                      {claim.address.map((line) => (
+                        <span key={line} className="block">
+                          {line}
+                        </span>
+                      ))}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-[11px] font-medium text-[#8a98ad]">Method</dt>
+                    <dd className="mt-1 text-[12px] font-medium text-[#172033]">{claim.method}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-[11px] font-medium text-[#8a98ad]">Tracking Number</dt>
+                    <dd className="mt-1">
+                      <a href="#" className="inline-flex items-center gap-1 text-[12px] font-bold text-[#0457cf]">
+                        {claim.tracking}
+                        <ExternalLink size={12} strokeWidth={2.2} />
+                      </a>
+                    </dd>
+                  </div>
+                </dl>
+              </section>
+
+              <section className="rounded-[8px] border border-[#dbe4ef] bg-white p-4">
+                <h2 className="border-b border-[#dbe4ef] pb-2 text-[10px] font-bold uppercase tracking-[0.04em] text-[#8a98ad]">
+                  FULFILLMENT TIMELINE
+                </h2>
+                <ol className="mt-4 space-y-4">
+                  <TimelineItem active title="Reward Claimed" meta="User initiated claim" />
+                  <TimelineItem active title="Order Processed" meta="Approved by system" />
+                  <TimelineItem active title="Shipped" meta="Handed to carrier" />
+                </ol>
+              </section>
+            </div>
+          </div>
+
+          <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-[#edf1f7] bg-[#f8fafc] px-5 py-3">
+            <button
+              type="button"
+              className="inline-flex h-9 items-center justify-center gap-2 rounded-[6px] border border-[#dbe4ef] bg-white px-4 text-[12px] font-semibold text-[#172033] transition-colors hover:bg-[#f8fafc]"
+            >
+              <Download size={14} strokeWidth={2.2} />
+              Download Invoice
+            </button>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                className="inline-flex h-9 items-center justify-center gap-2 rounded-[6px] border border-[#dbe4ef] bg-white px-4 text-[12px] font-semibold text-[#172033] transition-colors hover:bg-[#f8fafc]"
+              >
+                <MessageSquare size={14} strokeWidth={2.2} />
+                Contact User
+              </button>
+              <button
+                type="button"
+                className="inline-flex h-9 items-center justify-center gap-2 rounded-[6px] bg-[#2563eb] px-4 text-[12px] font-bold text-white shadow-[0_6px_14px_rgba(37,99,235,0.22)] transition-colors hover:bg-[#1d4ed8]"
+              >
+                <ExternalLink size={14} strokeWidth={2.2} />
+                Update Status
+              </button>
+            </div>
+          </footer>
+        </article>
+      </DashboardPageShell>
+    );
+  }
+
   return (
     <DashboardPageShell contentClassName="px-5 pb-10 pt-5">
       <div className="animate-dashboard-entry space-y-5">
         <nav className="flex items-center gap-2 text-[12px] font-medium text-[#64748b]" aria-label="Breadcrumb">
-          <Link href="/rewards-platform" className="transition-colors hover:text-[#1B3061]">
+          <Link href="/rewards-platform?tab=milestones" className="transition-colors hover:text-[#1B3061]">
             Rewards Platform
           </Link>
           <span aria-hidden="true">&gt;</span>
-          <Link href="/rewards-platform" className="transition-colors hover:text-[#1B3061]">
+          <Link href="/rewards-platform?tab=milestones" className="transition-colors hover:text-[#1B3061]">
             Pending Claims
           </Link>
           <span aria-hidden="true">&gt;</span>
@@ -170,7 +318,7 @@ export default async function RewardClaimDetailPage({
           </div>
           {isPending ? null : (
             <Link
-              href="/rewards-platform"
+              href="/rewards-platform?tab=milestones"
               aria-label="Close reward fulfillment detail"
               className="flex h-8 w-8 items-center justify-center rounded-full text-[#64748b] transition-colors hover:bg-[#eef2ff] hover:text-[#172033]"
             >
@@ -261,7 +409,7 @@ export default async function RewardClaimDetailPage({
 
                 <footer className="mt-6 flex justify-end gap-3 border-t border-[#edf1f7] pt-5">
                   <Link
-                    href="/rewards-platform"
+                    href="/rewards-platform?tab=milestones"
                     className="inline-flex h-10 items-center justify-center rounded-[6px] border border-[#dbe4ef] bg-white px-5 text-[12px] font-semibold text-[#475569] transition-colors hover:bg-[#f8fafc]"
                   >
                     Cancel

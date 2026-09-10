@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import Header from './Header';
 import Sidebar from './Sidebar';
 
@@ -32,6 +32,26 @@ export const DashboardPageShell = ({
   </div>
 );
 
+export const DashboardPageHeader = ({
+  title,
+  description,
+  action,
+  className,
+}: {
+  title: string;
+  description?: string;
+  action?: React.ReactNode;
+  className?: string;
+}) => (
+  <header className={cn('flex flex-wrap items-start justify-between gap-4', className)}>
+    <div>
+      <h1 className="page-title">{title}</h1>
+      {description ? <p className="page-description mt-1">{description}</p> : null}
+    </div>
+    {action ? <div className="shrink-0">{action}</div> : null}
+  </header>
+);
+
 export const DashboardPanel = ({
   children,
   className,
@@ -41,7 +61,7 @@ export const DashboardPanel = ({
 }) => (
   <section
     className={cn(
-      'overflow-hidden rounded-[10px] border border-[#dde5f1] bg-white shadow-[0_1px_3px_rgba(15,23,42,0.04)]',
+      'ui-card',
       className,
     )}
   >
@@ -59,7 +79,7 @@ export const DashboardMetricCard = ({
   className,
 }: {
   title: string;
-  value: string;
+  value?: string;
   icon: IconComponent;
   iconClass: string;
   iconWrapClass: string;
@@ -68,7 +88,7 @@ export const DashboardMetricCard = ({
 }) => (
   <article
     className={cn(
-      'dashboard-interactive flex min-h-[150px] flex-col justify-between rounded-[10px] border border-[#dde5f1] bg-white p-4 shadow-[0_1px_3px_rgba(15,23,42,0.04)]',
+      'ui-card dashboard-interactive flex min-h-[150px] flex-col justify-between p-4',
       className,
     )}
   >
@@ -80,7 +100,7 @@ export const DashboardMetricCard = ({
     </div>
 
     <div>
-      <p className="text-[25px] font-bold leading-8 text-[#202b3d]">{value}</p>
+      {value ? <p className="text-[25px] font-bold leading-8 text-[#202b3d]">{value}</p> : null}
       {children}
     </div>
   </article>
@@ -102,7 +122,7 @@ export const DashboardSearchField = ({
     <input
       type="search"
       placeholder={placeholder}
-      className="h-full w-full rounded-[5px] border border-[#dbe4ef] bg-white pl-9 pr-3 text-[11px] text-[#1f2937] outline-hidden placeholder:text-[#93a0b4] focus:border-[#1B3061] focus:ring-2 focus:ring-[#1B3061]/10"
+      className="ui-control h-full w-full pl-9 pr-3 text-[11px] placeholder:text-[#93a0b4]"
     />
   </label>
 );
@@ -123,7 +143,7 @@ export const DashboardSelectButton = ({
     aria-expanded={ariaExpanded}
     onClick={onClick}
     className={cn(
-      'inline-flex h-8 items-center justify-between gap-2 rounded-[5px] border border-[#dbe4ef] bg-white px-3 text-[11px] font-medium text-[#1f2937] transition-colors hover:border-[#c4cede] hover:bg-[#fbfcfe] focus-visible:border-[#1B3061] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1B3061]/15',
+      'ui-control inline-flex h-8 items-center justify-between gap-2 px-3 text-[11px] transition-colors hover:border-[#c4cede] hover:bg-[#fbfcfe] focus-visible:border-[#1B3061] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1B3061]/15',
       className,
     )}
   >
@@ -131,20 +151,42 @@ export const DashboardSelectButton = ({
   </button>
 );
 
+export const dashboardButtonClass = (
+  variant: 'primary' | 'secondary' | 'outline' | 'danger' | 'success' = 'primary',
+  size: 'sm' | 'md' | 'lg' = 'md',
+) => {
+  const variants = {
+    primary: 'ui-button-primary',
+    secondary: 'ui-button-secondary',
+    outline: 'ui-button-outline',
+    danger: 'ui-button-danger',
+    success: 'ui-button-success',
+  };
+  const sizes = {
+    sm: 'h-8 px-3 text-[11px]',
+    md: 'h-9 px-4 text-[12px]',
+    lg: 'h-10 px-5 text-[13px]',
+  };
+
+  return cn(variants[variant], sizes[size]);
+};
+
+type DashboardButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
+  children: React.ReactNode;
+  className?: string;
+};
+
 export const DashboardPrimaryButton = ({
   children,
   className,
-  onClick,
-}: {
-  children: React.ReactNode;
-  className?: string;
-  onClick?: () => void;
-}) => (
+  ...buttonProps
+}: DashboardButtonProps) => (
   <button
     type="button"
-    onClick={onClick}
+    {...buttonProps}
     className={cn(
-      'inline-flex h-8 shrink-0 items-center justify-center gap-2 rounded-[5px] bg-[#1B3061] px-4 text-[11px] font-bold text-white shadow-[0_6px_14px_rgba(27,48,97,0.18)] transition-colors hover:bg-[#14244d]',
+      dashboardButtonClass('primary', 'sm'),
+      'shrink-0',
       className,
     )}
   >
@@ -155,22 +197,83 @@ export const DashboardPrimaryButton = ({
 export const DashboardSecondaryButton = ({
   children,
   className,
-  onClick,
-}: {
-  children: React.ReactNode;
-  className?: string;
-  onClick?: () => void;
-}) => (
+  ...buttonProps
+}: DashboardButtonProps) => (
   <button
     type="button"
-    onClick={onClick}
+    {...buttonProps}
     className={cn(
-      'inline-flex h-8 shrink-0 items-center justify-center gap-2 rounded-[5px] border border-[#dbe4ef] bg-white px-3 text-[11px] font-semibold text-[#475569] transition-colors hover:border-[#c4cede] hover:bg-[#fbfcfe] focus-visible:border-[#1B3061] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1B3061]/15',
+      dashboardButtonClass('secondary', 'sm'),
+      'shrink-0',
       className,
     )}
   >
     {children}
   </button>
+);
+
+export const DashboardIconButton = ({
+  children,
+  className,
+  onClick,
+  label,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  onClick?: () => void;
+  label: string;
+}) => (
+  <button
+    type="button"
+    aria-label={label}
+    onClick={onClick}
+    className={cn('ui-icon-button h-8 w-8 transition-colors hover:bg-[#eef2ff] hover:text-[#1B3061]', className)}
+  >
+    {children}
+  </button>
+);
+
+export const DashboardTableShell = ({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) => (
+  <DashboardPanel className={cn('relative overflow-visible', className)}>
+    {children}
+  </DashboardPanel>
+);
+
+export const DashboardPagination = ({
+  pages,
+  activePage = '1',
+  label,
+}: {
+  pages: string[];
+  activePage?: string;
+  label: string;
+}) => (
+  <nav className="flex items-center gap-2" aria-label={label}>
+    <button type="button" className="text-[#b0bac9]" aria-label="Previous page">
+      <ChevronLeft size={16} strokeWidth={2.2} />
+    </button>
+    {pages.map((page) => (
+      <button
+        key={page}
+        type="button"
+        className={cn(
+          'ui-pagination-button',
+          page === activePage && 'ui-pagination-button-active',
+        )}
+      >
+        {page}
+      </button>
+    ))}
+    <button type="button" className="text-[#94a3b8]" aria-label="Next page">
+      <ChevronRight size={16} strokeWidth={2.2} />
+    </button>
+  </nav>
 );
 
 export const dashboardStatusBadgeClass = (tone: 'success' | 'warning' | 'danger' | 'neutral' | 'info') => {

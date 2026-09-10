@@ -23,11 +23,13 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import {
+  DashboardPageHeader,
   DashboardPageShell,
-  DashboardPanel,
+  DashboardPagination,
   DashboardPrimaryButton,
   DashboardSearchField,
   DashboardSecondaryButton,
+  DashboardTableShell,
   cn,
 } from '../components';
 
@@ -857,15 +859,11 @@ export default function PaymentPage() {
   return (
     <DashboardPageShell contentClassName="px-5 pb-10 pt-5">
       <div className="animate-dashboard-entry space-y-5">
-        <header className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h1 className="text-[20px] font-bold leading-7 text-[#202b3d]">Payments Overview</h1>
-            <p className="mt-1 text-[11px] font-medium leading-4 text-[#64748b]">
-              Monitor revenue, commissions, and transaction flows across the platform.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3">
+        <DashboardPageHeader
+          title="Payments Overview"
+          description="Monitor revenue, commissions, and transaction flows across the platform."
+          action={
+            <div className="flex items-center gap-3">
             <DashboardSecondaryButton className="px-3">
               <Download size={13} strokeWidth={2.2} />
               Export CSV
@@ -875,7 +873,8 @@ export default function PaymentPage() {
               Generate Report
             </DashboardPrimaryButton>
           </div>
-        </header>
+          }
+        />
 
         <section
           aria-label="Payment metrics"
@@ -886,7 +885,7 @@ export default function PaymentPage() {
           ))}
         </section>
 
-        <DashboardPanel className="rounded-[8px]">
+        <DashboardTableShell>
           <div className="border-b border-[#e6ebf3] px-5 py-4">
             <h2 className="text-[16px] font-bold leading-6 text-[#202b3d]">Transaction History</h2>
             <div className="mt-4 flex flex-wrap items-center gap-3">
@@ -970,7 +969,7 @@ export default function PaymentPage() {
                         type="button"
                         aria-label={`View payment ${transaction.taskId}`}
                         onClick={() => setSelectedPaymentId(transaction.taskId)}
-                        className="ml-auto flex h-7 w-7 items-center justify-center rounded-full text-[#94a3b8] transition-colors hover:bg-[#eef2ff] hover:text-[#2563eb]"
+                        className="ml-auto flex h-7 w-7 items-center justify-center rounded-full text-[#94a3b8] transition-colors hover:bg-[#eef2ff] hover:text-[#1B3061]"
                       >
                         <Eye size={14} strokeWidth={2.1} />
                       </button>
@@ -983,42 +982,9 @@ export default function PaymentPage() {
 
           <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-[#edf1f7] px-5 py-4">
             <p className="text-[11px] font-medium text-[#64748b]">Showing 1 to 5 of 1,248 entries</p>
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                className="h-8 rounded-[5px] border border-[#dbe4ef] px-3 text-[11px] font-medium text-[#94a3b8]"
-              >
-                Previous
-              </button>
-              <button
-                type="button"
-                aria-current="page"
-                className="h-8 min-w-8 rounded-[5px] bg-[#2563eb] px-3 text-[11px] font-bold text-white"
-              >
-                1
-              </button>
-              <button
-                type="button"
-                className="h-8 min-w-8 rounded-[5px] border border-[#dbe4ef] px-3 text-[11px] font-medium text-[#475569]"
-              >
-                2
-              </button>
-              <button
-                type="button"
-                className="h-8 min-w-8 rounded-[5px] border border-[#dbe4ef] px-3 text-[11px] font-medium text-[#475569]"
-              >
-                3
-              </button>
-              <span className="px-2 text-[11px] font-bold text-[#94a3b8]">...</span>
-              <button
-                type="button"
-                className="h-8 rounded-[5px] border border-[#dbe4ef] px-3 text-[11px] font-medium text-[#475569]"
-              >
-                Next
-              </button>
-            </div>
+            <DashboardPagination pages={['1', '2', '3', '...']} label="Payment transactions pagination" />
           </footer>
-        </DashboardPanel>
+        </DashboardTableShell>
       </div>
 
       {selectedPaymentDetail ? (

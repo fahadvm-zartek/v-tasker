@@ -13,7 +13,7 @@ test('dashboard placeholder uses the compact layout with a fixed sidebar offset'
   assert.match(pageSource, /<OverviewDashboard\s*\/>/);
   assert.match(placeholderSource, /<Sidebar\s*\/>/);
   assert.match(sidebarSource, /w-\[var\(--layout-sidebar-current\)\]/);
-  assert.match(sidebarSource, /bg-white/);
+  assert.match(sidebarSource, /bg-\[#1B3061\]/);
   assert.match(pageSource, /pl-\[var\(--layout-sidebar-current\)\]/);
   assert.match(pageSource, /px-8/);
   assert.doesNotMatch(pageSource, /max-w-\[1440px\]/);
@@ -83,6 +83,27 @@ test('sidebar exposes rewards as a main category with a gift icon', async () => 
   assert.match(sidebarSource, /label: 'Rewards', href: '\/rewards-platform', icon: Gift/);
 });
 
+test('sidebar includes resolution center as a parent with disputes as the default route', async () => {
+  const sidebarSource = await readFile(new URL('./Sidebar.tsx', import.meta.url), 'utf8');
+
+  for (const text of [
+    'Resolution Center',
+    "href: '/disputes'",
+    'Disputes',
+    '/disputes',
+    'Cancellations',
+    '/cancellations',
+    'children',
+    'sidebar-subnav',
+    'sidebar-subnav-link',
+  ]) {
+    assert.match(sidebarSource, new RegExp(text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+  }
+
+  assert.match(sidebarSource, /Scale/);
+  assert.match(sidebarSource, /label: 'Resolution Center',\s*href: '\/disputes'/);
+});
+
 test('sidebar includes chat moderation as a parent item with nested routes', async () => {
   const sidebarSource = await readFile(new URL('./Sidebar.tsx', import.meta.url), 'utf8');
 
@@ -118,6 +139,15 @@ test('sidebar shows chat moderation subcategories only while the section is acti
   assert.doesNotMatch(sidebarSource, /sidebar-badge shrink-0 transition-transform/);
 });
 
+test('collapsed sidebar sub-navigation does not leave vertical gaps between main items', async () => {
+  const sidebarSource = await readFile(new URL('./Sidebar.tsx', import.meta.url), 'utf8');
+
+  assert.match(sidebarSource, /shouldShowChildren \? 'py-1\.5' : 'py-0'/);
+  assert.match(sidebarSource, /overflow-hidden pl-\[52px\] pr-3/);
+  assert.doesNotMatch(sidebarSource, /overflow-hidden py-1\.5 pl-\[52px\] pr-3/);
+  assert.doesNotMatch(sidebarSource, /sidebar-nav-group[^"]*(?:mt-|mb-|my-|space-y-|gap-)/);
+});
+
 test('chat moderation overview is the default active sub-navigation state', async () => {
   const sidebarSource = await readFile(new URL('./Sidebar.tsx', import.meta.url), 'utf8');
 
@@ -125,7 +155,7 @@ test('chat moderation overview is the default active sub-navigation state', asyn
   assert.match(sidebarSource, /const isChildActive = isActivePath\(child\.href\)/);
   assert.match(sidebarSource, /aria-current=\{isChildActive \? 'page' : undefined\}/);
   assert.match(sidebarSource, /sidebar-subnav-link relative flex h-8/);
-  assert.match(sidebarSource, /bottom-1\.5 left-0 top-1\.5 w-0\.5 rounded-full bg-\[#1B3061\]/);
+  assert.match(sidebarSource, /bottom-1\.5 left-0 top-1\.5 w-0\.5 rounded-full bg-\[#E68A2E\]/);
 });
 
 test('sidebar active tab uses soft blue active highlight state', async () => {
@@ -133,8 +163,45 @@ test('sidebar active tab uses soft blue active highlight state', async () => {
 
   assert.match(sidebarSource, /isActivePath\(item\.href\)/);
   assert.match(sidebarSource, /h-\[42px\]/);
-  assert.match(sidebarSource, /bg-\[#eef2ff\]/);
-  assert.match(sidebarSource, /text-\[#1B3061\]/);
+  assert.match(sidebarSource, /mx-3/);
+  assert.match(sidebarSource, /rounded-\[9px\]/);
+  assert.match(sidebarSource, /px-3/);
+  assert.match(sidebarSource, /bg-white\/10/);
+  assert.match(sidebarSource, /text-white/);
+  assert.match(sidebarSource, /bg-\[#E68A2E\]/);
+  assert.match(sidebarSource, /text-\[#E68A2E\]/);
+  assert.doesNotMatch(sidebarSource, /relative flex h-\[42px\] items-center justify-between bg-white\/10 px-4/);
+});
+
+test('collapsed sidebar separates active indicator from the centered icon', async () => {
+  const [sidebarSource, globalsSource] = await Promise.all([
+    readFile(new URL('./Sidebar.tsx', import.meta.url), 'utf8'),
+    readFile(new URL('../globals.css', import.meta.url), 'utf8'),
+  ]);
+
+  assert.match(sidebarSource, /sidebar-active-indicator/);
+  assert.match(sidebarSource, /left-0 top-1\.5 w-1/);
+  assert.match(globalsSource, /html\[data-sidebar-collapsed="true"\] \.sidebar-active-indicator/);
+  assert.match(globalsSource, /left: 5px;/);
+  assert.match(globalsSource, /top: 9px;/);
+  assert.match(globalsSource, /bottom: 9px;/);
+  assert.match(globalsSource, /width: 3px;/);
+  assert.match(globalsSource, /html\[data-sidebar-collapsed="true"\] \.sidebar-nav-main \{/);
+  assert.match(globalsSource, /gap: 0;/);
+});
+
+test('sidebar uses the dark navy and orange reference palette only within the sidebar chrome', async () => {
+  const sidebarSource = await readFile(new URL('./Sidebar.tsx', import.meta.url), 'utf8');
+
+  assert.match(sidebarSource, /bg-\[#1B3061\]/);
+  assert.match(sidebarSource, /border-\[#E68A2E\]/);
+  assert.match(sidebarSource, /text-white/);
+  assert.match(sidebarSource, /text-white\/80/);
+  assert.match(sidebarSource, /hover:bg-white\/10/);
+  assert.match(sidebarSource, /group-hover:text-white/);
+  assert.doesNotMatch(sidebarSource, /bg-\[#eef2ff\]/);
+  assert.doesNotMatch(sidebarSource, /text-\[#454756\]/);
+  assert.doesNotMatch(sidebarSource, /hover:bg-\[#f6f7fb\]/);
 });
 
 test('sidebar brand header reproduces reference branding', async () => {

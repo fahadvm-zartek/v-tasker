@@ -177,6 +177,9 @@ test('login logo uses the provided project logo asset', async () => {
 test('login forgot password link opens the reset page route', async () => {
   const cardSource = await readSource('./login/LoginCard.tsx');
 
+  assert.match(cardSource, /from 'next\/link'/);
+  assert.match(cardSource, /<Link[^>]+href="\/forgot-password"/);
+  assert.doesNotMatch(cardSource, /<a[^>]+href="\/forgot-password"/);
   assert.match(cardSource, /href="\/forgot-password"/);
   assert.match(cardSource, /Forgot Password\?/);
 });

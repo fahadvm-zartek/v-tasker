@@ -1,7 +1,6 @@
 import {
   Activity,
   Ban,
-  ChevronLeft,
   ChevronRight,
   Clock3,
   Eye,
@@ -14,7 +13,14 @@ import {
   Users,
 } from 'lucide-react';
 import Link from 'next/link';
-import { Header, Sidebar } from '../components';
+import {
+  DashboardMetricCard,
+  DashboardPageShell,
+  DashboardPagination,
+  DashboardPanel,
+  dashboardButtonClass,
+  cn,
+} from '../components';
 import UsersFilterToolbar from './UsersFilterToolbar';
 
 type MetricCard = {
@@ -207,221 +213,150 @@ const TrendIcon = ({ tone }: { tone: 'positive' | 'negative' }) =>
 
 export default function UsersPage() {
   return (
-    <div className="app-shell flex min-h-screen bg-[#f7f8fa]">
-      <Sidebar />
-
-      <main className="dashboard-main flex-1 pl-[var(--layout-sidebar-current)] transition-[padding] duration-300 max-md:pl-0">
-        <Header />
-
-        <div className="dashboard-container px-8 pb-10 pt-5 max-sm:px-4">
-          <div className="animate-dashboard-entry space-y-6">
-            <section
-              aria-label="User metrics"
-              className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-6"
+    <DashboardPageShell>
+      <div className="animate-dashboard-entry space-y-6">
+        <section
+          aria-label="User metrics"
+          className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-6"
+        >
+          {metrics.map((metric) => (
+            <DashboardMetricCard
+              key={metric.title}
+              title={metric.title}
+              value={metric.value}
+              icon={metric.icon}
+              iconClass={metric.iconClass}
+              iconWrapClass={metric.iconWrapClass}
             >
-              {metrics.map((metric) => {
-                const Icon = metric.icon;
-                return (
-                  <article
-                    key={metric.title}
-                    className="dashboard-interactive flex min-h-[150px] flex-col justify-between rounded-[10px] border border-[#dde5f1] bg-white p-4 shadow-[0_1px_3px_rgba(15,23,42,0.04)]"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <p className="text-[13px] font-medium leading-4 text-[#596982]">
-                        {metric.title}
-                      </p>
-                      <span
-                        className={`flex h-7 w-7 items-center justify-center rounded-[6px] ${metric.iconWrapClass}`}
-                      >
-                        <Icon className={metric.iconClass} size={15} strokeWidth={2.1} />
-                      </span>
+              {metric.change ? (
+                <span
+                  className={`mt-2 inline-flex items-center gap-1 text-[12px] font-bold ${
+                    metric.changeTone === 'negative' ? 'text-[#f43f5e]' : 'text-[#059669]'
+                  }`}
+                >
+                  <TrendIcon tone={metric.changeTone ?? 'positive'} />
+                  {metric.change}
+                </span>
+              ) : null}
+
+              {metric.details ? (
+                <div className="mt-5 grid grid-cols-2 gap-3 text-[10px] leading-3 text-[#596982]">
+                  {metric.details.map((detail) => (
+                    <div key={detail.label}>
+                      <p>{detail.label}</p>
+                      <p className="mt-0.5 font-medium">{detail.value}</p>
                     </div>
-
-                    <div>
-                      {!metric.action ? (
-                        <div className="flex flex-wrap items-end justify-between gap-2">
-                          <p className="text-[25px] font-bold leading-8 text-[#202b3d]">
-                            {metric.value}
-                          </p>
-                          {metric.change ? (
-                            <span
-                              className={`mb-1 inline-flex items-center gap-1 text-[12px] font-bold ${
-                                metric.changeTone === 'negative'
-                                  ? 'text-[#f43f5e]'
-                                  : 'text-[#059669]'
-                              }`}
-                            >
-                              <TrendIcon tone={metric.changeTone ?? 'positive'} />
-                              {metric.change}
-                            </span>
-                          ) : null}
-                        </div>
-                      ) : null}
-
-                      {metric.details ? (
-                        <div className="mt-5 grid grid-cols-2 gap-3 text-[10px] leading-3 text-[#596982]">
-                          {metric.details.map((detail) => (
-                            <div key={detail.label}>
-                              <p>{detail.label}</p>
-                              <p className="mt-0.5 font-medium">{detail.value}</p>
-                            </div>
-                          ))}
-                        </div>
-                      ) : null}
-
-                      {metric.action ? (
-                        <div className="mt-7 flex items-end justify-between gap-3">
-                          <p className="text-[25px] font-bold leading-8 text-[#111827]">
-                            {metric.value}
-                          </p>
-                          <a
-                            href="#"
-                            className="inline-flex items-center gap-1 text-[11px] font-medium text-[#0b63ce]"
-                          >
-                            {metric.action}
-                            <ChevronRight size={13} strokeWidth={2.3} />
-                          </a>
-                        </div>
-                      ) : null}
-                    </div>
-                  </article>
-                );
-              })}
-            </section>
-
-            <section
-              aria-label="User status summaries"
-              className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-6 xl:max-w-[calc(80%-5px)]"
-            >
-              {summaries.map((summary) => {
-                const Icon = summary.icon;
-                return (
-                  <article
-                    key={summary.title}
-                    className="dashboard-interactive flex min-h-[150px] flex-col justify-between rounded-[10px] border border-[#dde5f1] bg-white p-4 shadow-[0_1px_3px_rgba(15,23,42,0.04)]"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <p className="text-[13px] font-medium leading-4 text-[#596982]">
-                        {summary.title}
-                      </p>
-                      <span
-                        className={`flex h-7 w-7 items-center justify-center rounded-[6px] ${summary.iconWrapClass}`}
-                      >
-                        <Icon className={summary.iconClass} size={15} strokeWidth={2.1} />
-                      </span>
-                    </div>
-
-                    {summary.stats ? (
-                      <div className="grid grid-cols-2 gap-5">
-                        {summary.stats.map((stat) => (
-                          <div key={stat.label}>
-                            <p className="text-[10px] font-bold tracking-[0.14em] text-[#374151]">
-                              {stat.label}
-                            </p>
-                            <div className="mt-1 flex items-center gap-2">
-                              <p className="text-[17px] font-bold leading-5 text-[#111827]">
-                                {stat.value}
-                              </p>
-                              <span className={`h-1.5 w-1.5 rounded-full ${stat.dotClass}`} />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-[25px] font-bold leading-8 text-[#202b3d]">
-                        {summary.value}
-                      </p>
-                    )}
-                  </article>
-                );
-              })}
-            </section>
-
-            <section className="relative overflow-visible rounded-[10px] border border-[#dde5f1] bg-white shadow-[0_1px_3px_rgba(15,23,42,0.04)]">
-              <UsersFilterToolbar />
-
-              <div className="overflow-x-auto">
-                <table className="ui-table min-w-[920px] table-fixed">
-                  <thead>
-                    <tr className="ui-table-head h-[42px] text-left">
-                      <th className="w-[12%] px-5 text-[11px]">ID</th>
-                      <th className="w-[17%] px-5 text-[11px]">Name</th>
-                      <th className="w-[17%] px-5 text-[11px]">Mobile No</th>
-                      <th className="w-[21%] px-5 text-[11px]">Email</th>
-                      <th className="w-[13%] px-5 text-[11px]">Role</th>
-                      <th className="w-[14%] px-5 text-[11px]">Last Interaction</th>
-                      <th className="w-[16%] px-5 text-right text-[11px]">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {users.map((user) => (
-                      <tr key={user.id} className="ui-table-row h-[58px]">
-                        <td className="px-5 text-[13px] font-medium text-[#49627f]">{user.id}</td>
-                        <td className="px-5">
-                          <div className="flex items-center gap-3">
-                            <span
-                              className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${user.avatarClass}`}
-                            >
-                              {user.initials}
-                            </span>
-                            <span className="truncate text-[13px] font-bold text-[#1f2937]">
-                              {user.name}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-5 text-[13px] text-[#49627f]">{user.mobile}</td>
-                        <td className="px-5 text-[13px] text-[#49627f]">{user.email}</td>
-                        <td className="px-5">
-                          <span className={`status-badge ${roleStyles[user.role]}`}>
-                            {user.role}
-                          </span>
-                        </td>
-                        <td className="px-5 text-center text-[13px] text-[#64748b]">
-                          {user.lastInteraction}
-                        </td>
-                        <td className="px-5 text-right">
-                          <Link
-                            href={`/users/${user.id.replace('#', '')}`}
-                            className="inline-flex h-8 items-center justify-center gap-2 rounded-[7px] border border-[#c9d0e8] px-3 text-[12px] font-bold text-[#1B3061] transition-colors hover:bg-[#f3f6ff]"
-                          >
-                            <Eye size={14} strokeWidth={2.1} />
-                            View Profile
-                          </Link>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#e6ebf3] px-5 py-4">
-                <p className="text-[13px] text-[#64748b]">Showing 1-10 of 248 customers</p>
-                <nav className="flex items-center gap-2" aria-label="Users pagination">
-                  <button type="button" className="text-[#b0bac9]" aria-label="Previous page">
-                    <ChevronLeft size={16} strokeWidth={2.2} />
-                  </button>
-                  {['1', '2', '3', '...', '25'].map((page) => (
-                    <button
-                      key={page}
-                      type="button"
-                      className={`flex h-7 min-w-7 items-center justify-center rounded-[4px] px-2 text-[12px] font-semibold ${
-                        page === '1'
-                          ? 'bg-[#1B3061] text-white'
-                          : 'text-[#334155] hover:bg-[#f1f5f9]'
-                      }`}
-                    >
-                      {page}
-                    </button>
                   ))}
-                  <button type="button" className="text-[#94a3b8]" aria-label="Next page">
-                    <ChevronRight size={16} strokeWidth={2.2} />
-                  </button>
-                </nav>
-              </div>
-            </section>
+                </div>
+              ) : null}
+
+              {metric.action ? (
+                <a href="#" className="mt-4 inline-flex items-center gap-1 text-[11px] font-medium text-[#0b63ce]">
+                  {metric.action}
+                  <ChevronRight size={13} strokeWidth={2.3} />
+                </a>
+              ) : null}
+            </DashboardMetricCard>
+          ))}
+        </section>
+
+        <section
+          aria-label="User status summaries"
+          className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-6 xl:max-w-[calc(80%-5px)]"
+        >
+          {summaries.map((summary) => (
+            <DashboardMetricCard
+              key={summary.title}
+              title={summary.title}
+              value={summary.value}
+              icon={summary.icon}
+              iconClass={summary.iconClass}
+              iconWrapClass={summary.iconWrapClass}
+            >
+              {summary.stats ? (
+                <div className="grid grid-cols-2 gap-5">
+                  {summary.stats.map((stat) => (
+                    <div key={stat.label}>
+                      <p className="text-[10px] font-bold tracking-[0.14em] text-[#374151]">
+                        {stat.label}
+                      </p>
+                      <div className="mt-1 flex items-center gap-2">
+                        <p className="text-[17px] font-bold leading-5 text-[#111827]">
+                          {stat.value}
+                        </p>
+                        <span className={`h-1.5 w-1.5 rounded-full ${stat.dotClass}`} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </DashboardMetricCard>
+          ))}
+        </section>
+
+        <DashboardPanel className="relative overflow-visible">
+          <UsersFilterToolbar />
+
+          <div className="overflow-x-auto">
+            <table className="ui-table min-w-[920px] table-fixed">
+              <thead>
+                <tr className="ui-table-head h-[42px] text-left">
+                  <th className="w-[12%] px-5 text-[11px]">ID</th>
+                  <th className="w-[17%] px-5 text-[11px]">Name</th>
+                  <th className="w-[17%] px-5 text-[11px]">Mobile No</th>
+                  <th className="w-[21%] px-5 text-[11px]">Email</th>
+                  <th className="w-[13%] px-5 text-[11px]">Role</th>
+                  <th className="w-[14%] px-5 text-[11px]">Last Interaction</th>
+                  <th className="w-[16%] px-5 text-right text-[11px]">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {users.map((user) => (
+                  <tr key={user.id} className="ui-table-row h-[58px]">
+                    <td className="px-5 text-[13px] font-medium text-[#49627f]">{user.id}</td>
+                    <td className="px-5">
+                      <div className="flex items-center gap-3">
+                        <span
+                          className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${user.avatarClass}`}
+                        >
+                          {user.initials}
+                        </span>
+                        <span className="truncate text-[13px] font-bold text-[#1f2937]">
+                          {user.name}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-5 text-[13px] text-[#49627f]">{user.mobile}</td>
+                    <td className="px-5 text-[13px] text-[#49627f]">{user.email}</td>
+                    <td className="px-5">
+                      <span className={`status-badge ${roleStyles[user.role]}`}>
+                        {user.role}
+                      </span>
+                    </td>
+                    <td className="px-5 text-center text-[13px] text-[#64748b]">
+                      {user.lastInteraction}
+                    </td>
+                    <td className="px-5 text-right">
+                      <Link
+                        href={`/users/${user.id.replace('#', '')}`}
+                        className={cn(dashboardButtonClass('outline', 'sm'), 'border-[#c9d0e8] text-[#1B3061] hover:bg-[#f3f6ff]')}
+                      >
+                        <Eye size={14} strokeWidth={2.1} />
+                        View Profile
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        </div>
-      </main>
-    </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#e6ebf3] px-5 py-4">
+            <p className="text-[13px] text-[#64748b]">Showing 1-10 of 248 customers</p>
+            <DashboardPagination pages={['1', '2', '3', '...', '25']} label="Users pagination" />
+          </div>
+        </DashboardPanel>
+      </div>
+    </DashboardPageShell>
   );
 }

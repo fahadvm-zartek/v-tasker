@@ -75,7 +75,16 @@ test('rewards platform page reuses the dashboard shell and controls', () => {
 test('points configuration tab renders points activity when selected', () => {
   for (const literal of [
     'activeTab',
-    "useState<RewardsTabKey>('all')",
+    'useState<RewardsTabKey>(() =>',
+    "if (typeof window === 'undefined')",
+    "const requestedTab = new URLSearchParams(window.location.search).get('tab')",
+    "if (requestedTab === 'milestones' || requestedTab === 'points')",
+    'useSearchParams',
+    'const searchParams = useSearchParams();',
+    "const requestedTab = searchParams.get('tab');",
+    '<RewardsTabQuerySync onTabRequested={setActiveTab} />',
+    'useEffect(() =>',
+    'queueMicrotask(() => setActiveTab(requestedTab))',
     "onClick={() => setActiveTab('points')}",
     "activeTab === 'points'",
     'Total Points Earned',
@@ -149,8 +158,8 @@ test('rewards platform header exposes a configure action', () => {
   assert.match(source, /Configure/);
   assert.match(source, /aria-label="Configure rewards platform"/);
   assert.match(source, /onClick=\{\(\) => setActiveTab\('configure'\)\}/);
-  assert.match(source, /inline-flex h-9 items-center justify-center gap-2 rounded-\[5px\] border border-\[#0457cf\]/);
-  assert.match(source, /px-3 text-\[13px\] font-semibold text-\[#0457cf\]/);
+  assert.match(source, /DashboardSecondaryButton/);
+  assert.match(source, /className="h-9 border-\[#0457cf\] px-3 text-\[13px\] text-\[#0457cf\] hover:bg-\[#eef4ff\]"/);
   assert.match(source, /Settings2 size=\{16\}/);
   assert.doesNotMatch(source, /h-\[54px\]/);
   assert.doesNotMatch(source, /text-\[26px\]/);

@@ -1,6 +1,7 @@
 'use client';
 
 import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { type FormEvent, useEffect, useRef, useState } from 'react';
 
@@ -184,9 +185,9 @@ const LoginCard = () => {
             />
             <span>Remember me</span>
           </label>
-          <a href="/forgot-password" className="font-semibold text-[#1B3061] transition-colors hover:text-[#E68A2E]">
+          <Link href="/forgot-password" className="font-semibold text-[#1B3061] transition-colors hover:text-[#E68A2E]">
             Forgot Password?
-          </a>
+          </Link>
         </div>
 
         <button

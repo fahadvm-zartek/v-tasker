@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
 import {
@@ -12,6 +13,7 @@ import {
   LayoutGrid,
   MapPin,
   MessageSquareWarning,
+  Scale,
   Settings,
   Tags,
   TriangleAlert,
@@ -45,6 +47,15 @@ const menuItems: MenuItem[] = [
   { label: 'Payments', href: '/payment', icon: CreditCard },
   { label: 'Rewards', href: '/rewards-platform', icon: Gift },
   { label: 'Users', href: '/users', icon: Users },
+  {
+    label: 'Resolution Center',
+    href: '/disputes',
+    icon: Scale,
+    children: [
+      { label: 'Disputes', href: '/disputes' },
+      { label: 'Cancellations', href: '/cancellations' },
+    ],
+  },
   { label: 'Reports', href: '/reports', icon: TriangleAlert },
   { label: 'Locations', href: '/locations', icon: MapPin },
   { label: 'Service Categories', href: '/service-categories', icon: Tags },
@@ -82,7 +93,7 @@ const Sidebar = () => {
 
   return (
     <aside
-      className="fixed left-0 top-0 z-20 flex h-screen w-[var(--layout-sidebar-current)] flex-col justify-between border-r border-[#dfe5ef] bg-white text-[#1B3061] transition-[width] duration-300 max-md:hidden"
+      className="fixed left-0 top-0 z-20 flex h-screen w-[var(--layout-sidebar-current)] flex-col justify-between border-r border-white/10 bg-[#1B3061] text-white transition-[width] duration-300 max-md:hidden"
     >
       <button
         type="button"
@@ -96,20 +107,23 @@ const Sidebar = () => {
 
       <div>
         <div className="sidebar-brand-row flex h-[64px] items-center gap-3 px-5">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px] border-2 border-[#1B3061] bg-white shadow-[0_5px_13px_rgba(27,48,97,0.12)]">
-  <img
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px] border-2 border-[#E68A2E] bg-white shadow-[0_5px_13px_rgba(0,0,0,0.22)]">
+  <Image
     src="/logo.png"
     alt="V Tasker"
+    width={28}
+    height={28}
     className="h-7 w-7 object-contain"
+    unoptimized
   />
 </div>
           <div
             className="sidebar-brand-copy flex w-[170px] flex-col overflow-hidden whitespace-nowrap opacity-100 transition-all duration-200"
           >
-            <span className="text-[17px] font-bold leading-5 text-[#1B3061]">
+            <span className="text-[17px] font-bold leading-5 text-white">
               V Tasker
             </span>
-            <span className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.22em] text-[#777682]">
+            <span className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.22em] text-white/70">
               ADMIN PANEL
             </span>
           </div>
@@ -122,8 +136,8 @@ const Sidebar = () => {
             const shouldShowChildren = Boolean(item.children && isActive);
 
             const itemClass = isActive
-              ? 'sidebar-nav-link group relative flex h-[42px] items-center justify-between bg-[#eef2ff] px-4 text-[14px] font-medium text-[#1B3061] transition-all duration-150'
-              : 'sidebar-nav-link group relative flex h-12 items-center justify-between px-4 text-[14px] font-normal text-[#454756] transition-all duration-150 hover:bg-[#f6f7fb] hover:text-[#1B3061]';
+              ? 'sidebar-nav-link group relative mx-3 flex h-[42px] items-center justify-between rounded-[9px] bg-white/10 px-3 text-[14px] font-medium text-white transition-all duration-150'
+              : 'sidebar-nav-link group relative mx-3 flex h-12 items-center justify-between rounded-[9px] px-3 text-[14px] font-normal text-white/80 transition-all duration-150 hover:bg-white/10 hover:text-white';
 
             return (
               <div key={item.label} className="sidebar-nav-group">
@@ -135,7 +149,7 @@ const Sidebar = () => {
                   {isActive && (
                     <span
                       aria-hidden="true"
-                      className="absolute bottom-0 left-0 top-0 w-1 bg-[#1B3061] "
+                      className="sidebar-active-indicator absolute bottom-1.5 left-0 top-1.5 w-1 rounded-r-full bg-[#E68A2E]"
                     />
                   )}
 
@@ -143,7 +157,7 @@ const Sidebar = () => {
                     <Icon
                       size={19}
                       strokeWidth={isActive ? 2.25 : 1.85}
-                      className={`shrink-0 transition-colors ${isActive ? 'text-[#1B3061]' : 'text-[#4f5160] group-hover:text-[#1B3061]'
+                      className={`shrink-0 transition-colors ${isActive ? 'text-[#E68A2E]' : 'text-white/75 group-hover:text-white'
                         }`}
                     />
                     <span
@@ -154,7 +168,7 @@ const Sidebar = () => {
                   </div>
 
                   {item.badge && (
-                    <span className="sidebar-badge rounded-full bg-[#f5f6f8] px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.08em] text-[#7c7c88]">
+                    <span className="sidebar-badge rounded-full bg-white/10 px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.08em] text-white/75">
                       {item.badge}
                     </span>
                   )}
@@ -173,7 +187,11 @@ const Sidebar = () => {
                     }`}
                     aria-hidden={!shouldShowChildren}
                   >
-                    <div className="overflow-hidden py-1.5 pl-[52px] pr-3">
+                    <div
+                      className={`overflow-hidden pl-[52px] pr-3 transition-[padding] duration-200 ${
+                        shouldShowChildren ? 'py-1.5' : 'py-0'
+                      }`}
+                    >
                       {item.children.map((child) => {
                         const isChildActive = isActivePath(child.href);
 
@@ -184,15 +202,15 @@ const Sidebar = () => {
                             tabIndex={shouldShowChildren ? undefined : -1}
                             className={`sidebar-subnav-link relative flex h-8 items-center rounded-[6px] px-3 pl-4 text-[12px] font-medium transition-colors ${
                               isChildActive
-                                ? 'bg-[#f3f6ff] text-[#1B3061] shadow-[inset_0_0_0_1px_rgba(27,48,97,0.04)]'
-                                : 'text-[#6f7280] hover:bg-[#f7f8fb] hover:text-[#1B3061]'
+                                ? 'bg-white/10 text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]'
+                                : 'text-white/70 hover:bg-white/10 hover:text-white'
                             }`}
                             aria-current={isChildActive ? 'page' : undefined}
                           >
                             {isChildActive ? (
                               <span
                                 aria-hidden="true"
-                                className="absolute bottom-1.5 left-0 top-1.5 w-0.5 rounded-full bg-[#1B3061]"
+                                className="absolute bottom-1.5 left-0 top-1.5 w-0.5 rounded-full bg-[#E68A2E]"
                               />
                             ) : null}
                             <span className="sidebar-label truncate overflow-hidden whitespace-nowrap opacity-100 transition-all duration-200">
@@ -211,16 +229,16 @@ const Sidebar = () => {
       </div>
 
       {/* Sidebar Footer Profile */}
-      <div className="border-t border-[#dfe5ef] px-4 py-[18px]">
+      <div className="border-t border-white/10 px-4 py-[18px]">
         <div className="sidebar-profile-row flex items-center gap-3">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#1B3061] text-[11px] font-bold text-white">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#E68A2E] text-[11px] font-bold text-[#1B3061]">
             AU
           </div>
           <div
             className="sidebar-profile-copy flex w-[170px] flex-col truncate overflow-hidden whitespace-nowrap opacity-100 transition-all duration-200"
           >
-            <span className="truncate text-[14px] font-bold leading-5 text-[#0d1b2f]">Admin User</span>
-            <span className="truncate text-[11px] font-normal leading-4 text-[#777682]">
+            <span className="truncate text-[14px] font-bold leading-5 text-white">Admin User</span>
+            <span className="truncate text-[11px] font-normal leading-4 text-white/70">
               admin@alwaysvalentines.com
             </span>
           </div>
