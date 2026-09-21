@@ -1,0 +1,266 @@
+'use client';
+
+import Link from 'next/link';
+import Image from 'next/image';
+import { usePathname } from 'next/navigation';
+import React, { useEffect, useState } from 'react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  ClipboardList,
+  CreditCard,
+  Gift,
+  LayoutGrid,
+  MapPin,
+  MessageSquareWarning,
+  Scale,
+  Settings,
+  Tags,
+  TriangleAlert,
+  Users,
+} from 'lucide-react';
+import authService from '../services/authService';
+
+const SIDEBAR_STORAGE_KEY = 'v-Tasker-sidebar-collapsed';
+const { getStoredUserProfile } = authService;
+
+const getInitialSidebarCollapsed = () => {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  return localStorage.getItem(SIDEBAR_STORAGE_KEY) === 'true';
+};
+
+type MenuItem = {
+  label: string;
+  href: string;
+  icon: React.ComponentType<{ size?: number; strokeWidth?: number; className?: string }>;
+  badge?: string;
+  children?: Array<{
+    label: string;
+    href: string;
+  }>;
+};
+
+const menuItems: MenuItem[] = [
+  { label: 'Dashboard', href: '/', icon: LayoutGrid },
+  { label: 'Tasks', href: '/tasks', icon: ClipboardList },
+  { label: 'Payments', href: '/payment', icon: CreditCard },
+  { label: 'Rewards', href: '/rewards-platform', icon: Gift },
+  { label: 'Users', href: '/users', icon: Users },
+  {
+    label: 'Resolution Center',
+    href: '/disputes',
+    icon: Scale,
+    children: [
+      { label: 'Disputes', href: '/disputes' },
+      { label: 'Cancellations', href: '/cancellations' },
+    ],
+  },
+  { label: 'Reports', href: '/reports', icon: TriangleAlert },
+  { label: 'Locations', href: '/locations', icon: MapPin },
+  { label: 'Service Categories', href: '/service-categories', icon: Tags },
+  {
+    label: 'Chat Moderation',
+    href: '/chat-moderation/overview',
+    icon: MessageSquareWarning,
+    children: [
+      { label: 'Overview', href: '/chat-moderation/overview' },
+      { label: 'Moderation Logs', href: '/chat-moderation/logs' },
+      { label: 'Rules', href: '/chat-moderation/rules' },
+    ],
+  },
+  { label: 'Settings', href: '/settings', icon: Settings },
+];
+
+const Sidebar = () => {
+  const pathname = usePathname();
+  const [isCollapsed, setIsCollapsed] = useState(getInitialSidebarCollapsed);
+  const [profile] = useState(() => getStoredUserProfile());
+  const ToggleIcon = isCollapsed ? ChevronRight : ChevronLeft;
+  const displayName = `${profile.username}`.trim() || profile.username;
+  const profileInitials = displayName
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part.charAt(0).toUpperCase())
+    .join('') || 'AU';
+
+  const isActivePath = (href: string) => {
+    if (href === '/') return pathname === '/' || pathname === '';
+    return pathname === href || pathname.startsWith(`${href}/`);
+  };
+
+  useEffect(() => {
+    localStorage.setItem(SIDEBAR_STORAGE_KEY, String(isCollapsed));
+    document.documentElement.dataset.sidebarCollapsed = String(isCollapsed);
+    document.documentElement.style.setProperty(
+      '--layout-sidebar-current',
+      isCollapsed ? '64px' : '256px',
+    );
+  }, [isCollapsed]);
+
+  return (
+    <aside
+      className="fixed left-0 top-0 z-20 flex h-screen w-[var(--layout-sidebar-current)] flex-col justify-between border-r border-white/10 bg-[#1B3061] text-white transition-[width] duration-300 max-md:hidden"
+    >
+      <button
+        type="button"
+        className="absolute -right-[14px] top-[18px] z-30 flex h-7 w-7 items-center justify-center rounded-full border border-[#dfe5ef] bg-white text-[#1B3061] shadow-[0_8px_20px_rgba(27,48,97,0.16)] transition-all duration-200 hover:border-[#E68A2E] hover:text-[#E68A2E] hover:shadow-[0_10px_24px_rgba(27,48,97,0.20)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#E68A2E]/30"
+        aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        aria-expanded={!isCollapsed}
+        onClick={() => setIsCollapsed((current) => !current)}
+      >
+        <ToggleIcon size={15} strokeWidth={2.4} />
+      </button>
+
+      <div>
+        <div className="sidebar-brand-row flex h-[64px] items-center gap-3 px-5">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px] border-2 border-[#E68A2E] bg-white shadow-[0_5px_13px_rgba(0,0,0,0.22)]">
+  <Image
+    src="/logo.png"
+    alt="V Tasker"
+    width={28}
+    height={28}
+    className="h-7 w-7 object-contain"
+    unoptimized
+  />
+</div>
+          <div
+            className="sidebar-brand-copy flex w-[170px] flex-col overflow-hidden whitespace-nowrap opacity-100 transition-all duration-200"
+          >
+            <span className="text-[17px] font-bold leading-5 text-white">
+              V Tasker
+            </span>
+            <span className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.22em] text-white/70">
+              ADMIN PANEL
+            </span>
+          </div>
+        </div>
+
+        <nav className="pt-10">
+          {menuItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = isActivePath(item.href) || item.children?.some((child) => isActivePath(child.href));
+            const shouldShowChildren = Boolean(item.children && isActive);
+
+            const itemClass = isActive
+              ? 'sidebar-nav-link group relative mx-3 flex h-[42px] items-center justify-between rounded-[9px] bg-white/10 px-3 text-[14px] font-medium text-white transition-all duration-150'
+              : 'sidebar-nav-link group relative mx-3 flex h-12 items-center justify-between rounded-[9px] px-3 text-[14px] font-normal text-white/80 transition-all duration-150 hover:bg-white/10 hover:text-white';
+
+            return (
+              <div key={item.label} className="sidebar-nav-group">
+                <Link
+                  href={item.href}
+                  className={itemClass}
+                  aria-current={isActive ? 'page' : undefined}
+                >
+                  {isActive && (
+                    <span
+                      aria-hidden="true"
+                      className="sidebar-active-indicator absolute bottom-1.5 left-0 top-1.5 w-1 rounded-r-full bg-[#E68A2E]"
+                    />
+                  )}
+
+                  <div className="sidebar-nav-main flex items-center gap-[14px]">
+                    <Icon
+                      size={19}
+                      strokeWidth={isActive ? 2.25 : 1.85}
+                      className={`shrink-0 transition-colors ${isActive ? 'text-[#E68A2E]' : 'text-white/75 group-hover:text-white'
+                        }`}
+                    />
+                    <span
+                      className="sidebar-label w-[148px] truncate overflow-hidden whitespace-nowrap opacity-100 transition-all duration-200"
+                    >
+                      {item.label}
+                    </span>
+                  </div>
+
+                  {item.badge && (
+                    <span className="sidebar-badge rounded-full bg-white/10 px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.08em] text-white/75">
+                      {item.badge}
+                    </span>
+                  )}
+
+                  <span
+                    className="sidebar-tooltip pointer-events-none absolute left-full top-1/2 ml-3 -translate-y-1/2 rounded-[7px] border border-[#dfe5ef] bg-white px-3 py-1.5 text-[12px] font-semibold text-[#1B3061] opacity-0 shadow-[0_8px_20px_rgba(27,48,97,0.16)] transition-opacity duration-150 group-hover:opacity-100"
+                    role="tooltip"
+                  >
+                    {item.label}
+                  </span>
+                </Link>
+                {item.children ? (
+                  <div
+                    className={`sidebar-subnav grid transition-[grid-template-rows,opacity] duration-200 ease-out ${
+                      shouldShowChildren ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+                    }`}
+                    aria-hidden={!shouldShowChildren}
+                  >
+                    <div
+                      className={`overflow-hidden pl-[52px] pr-3 transition-[padding] duration-200 ${
+                        shouldShowChildren ? 'py-1.5' : 'py-0'
+                      }`}
+                    >
+                      {item.children.map((child) => {
+                        const isChildActive = isActivePath(child.href);
+
+                        return (
+                          <Link
+                            key={child.label}
+                            href={child.href}
+                            tabIndex={shouldShowChildren ? undefined : -1}
+                            className={`sidebar-subnav-link relative flex h-8 items-center rounded-[6px] px-3 pl-4 text-[12px] font-medium transition-colors ${
+                              isChildActive
+                                ? 'bg-white/10 text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]'
+                                : 'text-white/70 hover:bg-white/10 hover:text-white'
+                            }`}
+                            aria-current={isChildActive ? 'page' : undefined}
+                          >
+                            {isChildActive ? (
+                              <span
+                                aria-hidden="true"
+                                className="absolute bottom-1.5 left-0 top-1.5 w-0.5 rounded-full bg-[#E68A2E]"
+                              />
+                            ) : null}
+                            <span className="sidebar-label truncate overflow-hidden whitespace-nowrap opacity-100 transition-all duration-200">
+                              {child.label}
+                            </span>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            );
+          })}
+        </nav>
+      </div>
+
+      
+
+      {/* Sidebar Footer Profile */}
+      <div className="border-t border-white/10 px-4 py-[18px]">
+        <Link
+          href="/settings"
+          aria-label="Open settings"
+          className="sidebar-profile-row flex items-center gap-3 rounded-[9px] transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#E68A2E]/30"
+        >
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#E68A2E] text-[11px] font-bold text-[#1B3061]">
+            {profileInitials}
+          </div>
+          <div
+            className="sidebar-profile-copy flex w-[170px] flex-col truncate overflow-hidden whitespace-nowrap opacity-100 transition-all duration-200"
+          >
+            <span className="truncate text-[14px] font-bold leading-5 text-white">{displayName}</span>
+            <span className="truncate text-[11px] font-normal leading-4 text-white/70">
+              {profile.email}
+            </span>
+          </div>
+        </Link>
+      </div>
+    </aside>
+  );
+};
+
+export default Sidebar;
