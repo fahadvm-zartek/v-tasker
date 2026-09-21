@@ -1,10 +1,10 @@
 const { AuthApiError, DEFAULT_API_BASE_URL, authenticatedFetch: defaultAuthenticatedFetch } = require('./authService.js');
 
 const CATEGORY_API_PATHS = {
-  categories: '/api/categories',
-  categoryDetail: (id) => `/api/categories/${encodeURIComponent(String(id))}`,
-  subcategories: '/api/subcategories',
-  subcategoryDetail: (id) => `/api/subcategories/${encodeURIComponent(String(id))}`,
+  categories: '/api/categories/',
+  categoryDetail: (id) => `/api/categories/${encodeURIComponent(String(id))}/`,
+  subcategories: '/api/subcategories/',
+  subcategoryDetail: (id) => `/api/subcategories/${encodeURIComponent(String(id))}/`,
 };
 
 const EMPTY_VALUE = 'N/A';
@@ -76,7 +76,7 @@ const normalizeCategory = (category, index = 0) => ({
   name: String(pickFirst(category?.name, category?.title, EMPTY_VALUE)),
   description: String(pickFirst(category?.description, '')),
   slug: String(pickFirst(category?.slug, '')),
-  categoryType: normalizeCategoryType(pickFirst(category?.category_type, category?.type, category?.service_type)),
+  categoryType: normalizeCategoryType(pickFirst(category?.category_type, category?.type, category?.service_type, category?.categoryType)),
   isActive: Boolean(pickFirst(category?.is_active, category?.active, true)),
   order: Number(pickFirst(category?.order, category?.sort_order, index + 1)),
   keywords: extractCollection(category, ['keywords', 'keyword_list', 'tags']).map(normalizeKeyword),
@@ -112,13 +112,28 @@ const buildSubcategoryPayload = (subcategory) => ({
   checklist_questions: (subcategory.checklist || []).map(buildQuestionPayload),
 });
 
-const buildCategoryPayload = (category) => ({
-  name: String(category.name || '').trim(),
-  description: String(category.description || '').trim(),
-  category_type: category.categoryType || 'IN_PERSON',
-  is_active: category.isActive ?? true,
-  keywords: (category.keywords || []).map((keyword) => String(keyword).trim()).filter(Boolean),
-});
+const buildCategoryPayload = (category) => {
+  const payload = {
+    name: String(category.name || '').trim(),
+    category_type: category.categoryType || 'IN_PERSON',
+    description: String(category.description || '').trim(),
+    is_active: category.isActive ?? true,
+  };
+
+  if (category.slug) {
+    payload.slug = String(category.slug).trim();
+  }
+
+  if (category.icon) {
+    payload.icon = String(category.icon).trim();
+  }
+
+  if (category.order !== undefined && category.order !== null && !isNaN(Number(category.order))) {
+    payload.order = Number(category.order);
+  }
+
+  return payload;
+};
 
 const readJson = async (response, fallbackMessage) => {
   if (!response.ok) {

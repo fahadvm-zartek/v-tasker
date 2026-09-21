@@ -262,7 +262,11 @@ const CategoryFormModal = ({
   onUpdate: (changes: Partial<CategoryFormState>) => void;
 }) => (
   <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#111827]/45 px-4 py-6 backdrop-blur-[1px]">
-    <section
+    <form
+      onSubmit={(event) => {
+        event.preventDefault();
+        onSave();
+      }}
       role="dialog"
       aria-modal="true"
       aria-labelledby="category-form-title"
@@ -350,8 +354,7 @@ const CategoryFormModal = ({
           Cancel
         </button>
         <button
-          type="button"
-          onClick={onSave}
+          type="submit"
           disabled={isSaving}
           className="inline-flex h-9 items-center justify-center gap-2 rounded-[6px] bg-[#e68a2e] px-5 text-[12px] font-bold text-white transition-colors hover:bg-[#cf7721] disabled:opacity-60"
         >
@@ -359,7 +362,7 @@ const CategoryFormModal = ({
           {isSaving ? 'Saving...' : 'Save Category'}
         </button>
       </footer>
-    </section>
+    </form>
   </div>
 );
 
@@ -1159,13 +1162,26 @@ const ServiceCategoriesPage = () => {
         description: categoryForm.description,
       };
 
+      let savedCategory: ApiServiceCategory | null = null;
+
       if (categoryForm.mode === 'edit' && categoryForm.editingCategoryId) {
-        await updateCategory(categoryForm.editingCategoryId, payload);
+        savedCategory = await updateCategory(categoryForm.editingCategoryId, payload);
       } else {
-        await createCategory(payload);
+        savedCategory = await createCategory(payload);
       }
 
       await loadCategories({ silent: true });
+
+      if (savedCategory) {
+        setCategories((current) => {
+          const exists = current.some((cat) => cat.id === savedCategory!.id);
+          if (exists) {
+            return current.map((cat) => (cat.id === savedCategory!.id ? { ...cat, ...savedCategory! } : cat));
+          }
+          return [...current, savedCategory!];
+        });
+      }
+
       setCategoryForm(null);
       setToastMessage({
         title: categoryForm.mode === 'edit' ? 'Service category updated' : 'Service category created',

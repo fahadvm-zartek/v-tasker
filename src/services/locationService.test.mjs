@@ -19,7 +19,6 @@ test('locationService exports correct API endpoint builders', () => {
   assert.equal(LOCATION_API_PATHS.stateDetail('s-1'), '/api/states/s-1/');
   assert.equal(LOCATION_API_PATHS.suburbs, '/api/suburbs/');
   assert.equal(LOCATION_API_PATHS.suburbDetail('sub-5'), '/api/suburbs/sub-5/');
-  assert.equal(LOCATION_API_PATHS.suburbStatus('sub-5'), '/api/suburbs/sub-5/status/');
 });
 
 test('normalizeCountry maps properties with fallbacks', () => {

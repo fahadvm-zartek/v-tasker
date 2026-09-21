@@ -135,8 +135,8 @@ const LoginCard = () => {
       });
       setTouchedFields({ email: true, password: true });
       setToastVariant('error');
-      setToastTitle('Sign in failed');
-      setToastMessage(error instanceof Error ? error.message : 'Unable to sign in. Please try again.');
+      setToastTitle('Invalid credentials');
+      setToastMessage('Please check your email and password.');
       setIsSubmitting(false);
     }
   };

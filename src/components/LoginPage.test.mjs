@@ -118,7 +118,8 @@ test('login displays backend field errors next to the matching fields', async ()
   assert.match(cardSource, /apiFieldErrors/);
   assert.match(cardSource, /getFieldError\(error, 'email'\)/);
   assert.match(cardSource, /getFieldError\(error, 'password'\)/);
-  assert.match(cardSource, /setToastMessage\(error instanceof Error \? error\.message/);
+  assert.match(cardSource, /setToastTitle\('Invalid credentials'\)/);
+  assert.match(cardSource, /setToastMessage\('Please check your email and password\.'\)/);
   assert.match(cardSource, /variant=\{toastVariant\}/);
   assert.match(cardSource, /setToastVariant\('error'\)/);
   assert.doesNotMatch(cardSource, /getFieldError\(error, 'username'\)/);

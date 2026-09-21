@@ -4,10 +4,10 @@ import test from 'node:test';
 import categoryService from './categoryService.js';
 
 test('category service builds categories and subcategories endpoints', () => {
-  assert.equal(categoryService.getCategoriesEndpoint('https://api.example.com/'), 'https://api.example.com/api/categories');
-  assert.equal(categoryService.getCategoryEndpoint(1, 'https://api.example.com/'), 'https://api.example.com/api/categories/1');
-  assert.equal(categoryService.getSubcategoriesEndpoint('https://api.example.com/'), 'https://api.example.com/api/subcategories');
-  assert.equal(categoryService.getSubcategoryEndpoint(5, 'https://api.example.com/'), 'https://api.example.com/api/subcategories/5');
+  assert.equal(categoryService.getCategoriesEndpoint('https://api.example.com/'), 'https://api.example.com/api/categories/');
+  assert.equal(categoryService.getCategoryEndpoint(1, 'https://api.example.com/'), 'https://api.example.com/api/categories/1/');
+  assert.equal(categoryService.getSubcategoriesEndpoint('https://api.example.com/'), 'https://api.example.com/api/subcategories/');
+  assert.equal(categoryService.getSubcategoryEndpoint(5, 'https://api.example.com/'), 'https://api.example.com/api/subcategories/5/');
 });
 
 test('fetchCategoriesPage normalizes the backend categories payload with nested subcategories', async () => {
@@ -56,7 +56,7 @@ test('fetchCategoriesPage normalizes the backend categories payload with nested 
     },
   });
 
-  assert.equal(calls[0].url, 'https://api.example.com/api/categories');
+  assert.equal(calls[0].url, 'https://api.example.com/api/categories/');
   assert.equal(calls[0].options.method, 'GET');
   assert.equal(calls[0].options.headers.Accept, 'application/json');
   assert.equal(page.count, 33);
@@ -102,7 +102,7 @@ test('createSubcategory and updateSubcategory send backend payloads for keywords
     authenticatedFetch: fetcher,
   });
 
-  assert.equal(calls[0].url, 'https://api.example.com/api/subcategories');
+  assert.equal(calls[0].url, 'https://api.example.com/api/subcategories/');
   assert.equal(calls[0].options.method, 'POST');
   assert.deepEqual(JSON.parse(calls[0].options.body), {
     category: '1',
@@ -120,7 +120,7 @@ test('createSubcategory and updateSubcategory send backend payloads for keywords
       },
     ],
   });
-  assert.equal(calls[1].url, 'https://api.example.com/api/subcategories/5');
+  assert.equal(calls[1].url, 'https://api.example.com/api/subcategories/5/');
   assert.equal(calls[1].options.method, 'PATCH');
 });
 
@@ -146,14 +146,13 @@ test('createCategory sends the backend payload for a main service category', asy
     },
   );
 
-  assert.equal(calls[0].url, 'https://api.example.com/api/categories');
+  assert.equal(calls[0].url, 'https://api.example.com/api/categories/');
   assert.equal(calls[0].options.method, 'POST');
   assert.deepEqual(JSON.parse(calls[0].options.body), {
     name: 'Cleaning',
     description: 'Home and office cleaning',
     category_type: 'IN_PERSON',
     is_active: true,
-    keywords: ['cleaning', 'home cleaning'],
   });
   assert.equal(category.id, '7');
   assert.equal(category.name, 'Cleaning');
@@ -182,14 +181,13 @@ test('updateCategory sends the backend payload for an existing main service cate
     },
   );
 
-  assert.equal(calls[0].url, 'https://api.example.com/api/categories/7');
+  assert.equal(calls[0].url, 'https://api.example.com/api/categories/7/');
   assert.equal(calls[0].options.method, 'PATCH');
   assert.deepEqual(JSON.parse(calls[0].options.body), {
     name: 'Cleaning Updated',
     description: 'Updated description',
     category_type: 'IN_PERSON',
     is_active: true,
-    keywords: [],
   });
   assert.equal(category.id, '7');
   assert.equal(category.name, 'Cleaning Updated');
