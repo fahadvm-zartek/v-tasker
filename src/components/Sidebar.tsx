@@ -114,133 +114,130 @@ const Sidebar = () => {
         <ToggleIcon size={15} strokeWidth={2.4} />
       </button>
 
-      <div>
-        <div className="sidebar-brand-row flex h-[64px] items-center gap-3 px-5">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px] border-2 border-[#E68A2E] bg-white shadow-[0_5px_13px_rgba(0,0,0,0.22)]">
-  <Image
-    src="/logo.png"
-    alt="V Tasker"
-    width={28}
-    height={28}
-    className="h-7 w-7 object-contain"
-    unoptimized
-  />
-</div>
-          <div
-            className="sidebar-brand-copy flex w-[170px] flex-col overflow-hidden whitespace-nowrap opacity-100 transition-all duration-200"
-          >
-            <span className="text-[17px] font-bold leading-5 text-white">
-              V Tasker
-            </span>
-            <span className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.22em] text-white/70">
-              ADMIN PANEL
-            </span>
-          </div>
+      <div className="sidebar-brand-row flex h-[64px] shrink-0 items-center gap-3 px-5">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px] border-2 border-[#E68A2E] bg-white shadow-[0_5px_13px_rgba(0,0,0,0.22)]">
+          <Image
+            src="/logo.png"
+            alt="V Tasker"
+            width={28}
+            height={28}
+            className="h-7 w-7 object-contain"
+            unoptimized
+          />
         </div>
+        <div
+          className="sidebar-brand-copy flex w-[170px] flex-col overflow-hidden whitespace-nowrap opacity-100 transition-all duration-200"
+        >
+          <span className="text-[17px] font-bold leading-5 text-white">
+            V Tasker
+          </span>
+          <span className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.22em] text-white/70">
+            ADMIN PANEL
+          </span>
+        </div>
+      </div>
 
-        <nav className="pt-10">
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = isActivePath(item.href) || item.children?.some((child) => isActivePath(child.href));
-            const shouldShowChildren = Boolean(item.children && isActive);
+      <nav className="sidebar-nav-container flex-1 min-h-0 overflow-y-auto overflow-x-hidden py-6">
+        {menuItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = isActivePath(item.href) || item.children?.some((child) => isActivePath(child.href));
+          const shouldShowChildren = Boolean(item.children && isActive);
 
-            const itemClass = isActive
-              ? 'sidebar-nav-link group relative mx-3 flex h-[42px] items-center justify-between rounded-[9px] bg-white/10 px-3 text-[14px] font-medium text-white transition-all duration-150'
-              : 'sidebar-nav-link group relative mx-3 flex h-12 items-center justify-between rounded-[9px] px-3 text-[14px] font-normal text-white/80 transition-all duration-150 hover:bg-white/10 hover:text-white';
+          const itemClass = isActive
+            ? 'sidebar-nav-link group relative mx-3 flex h-[42px] items-center justify-between rounded-[9px] bg-white/10 px-3 text-[14px] font-medium text-white transition-all duration-150'
+            : 'sidebar-nav-link group relative mx-3 flex h-12 items-center justify-between rounded-[9px] px-3 text-[14px] font-normal text-white/80 transition-all duration-150 hover:bg-white/10 hover:text-white';
 
-            return (
-              <div key={item.label} className="sidebar-nav-group">
-                <Link
-                  href={item.href}
-                  className={itemClass}
-                  aria-current={isActive ? 'page' : undefined}
-                >
-                  {isActive && (
-                    <span
-                      aria-hidden="true"
-                      className="sidebar-active-indicator absolute bottom-1.5 left-0 top-1.5 w-1 rounded-r-full bg-[#E68A2E]"
-                    />
-                  )}
-
-                  <div className="sidebar-nav-main flex items-center gap-[14px]">
-                    <Icon
-                      size={19}
-                      strokeWidth={isActive ? 2.25 : 1.85}
-                      className={`shrink-0 transition-colors ${isActive ? 'text-[#E68A2E]' : 'text-white/75 group-hover:text-white'
-                        }`}
-                    />
-                    <span
-                      className="sidebar-label w-[148px] truncate overflow-hidden whitespace-nowrap opacity-100 transition-all duration-200"
-                    >
-                      {item.label}
-                    </span>
-                  </div>
-
-                  {item.badge && (
-                    <span className="sidebar-badge rounded-full bg-white/10 px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.08em] text-white/75">
-                      {item.badge}
-                    </span>
-                  )}
-
+          return (
+            <div key={item.label} className="sidebar-nav-group">
+              <Link
+                href={item.href}
+                className={itemClass}
+                aria-current={isActive ? 'page' : undefined}
+              >
+                {isActive && (
                   <span
-                    className="sidebar-tooltip pointer-events-none absolute left-full top-1/2 ml-3 -translate-y-1/2 rounded-[7px] border border-[#dfe5ef] bg-white px-3 py-1.5 text-[12px] font-semibold text-[#1B3061] opacity-0 shadow-[0_8px_20px_rgba(27,48,97,0.16)] transition-opacity duration-150 group-hover:opacity-100"
-                    role="tooltip"
+                    aria-hidden="true"
+                    className="sidebar-active-indicator absolute bottom-1.5 left-0 top-1.5 w-1 rounded-r-full bg-[#E68A2E]"
+                  />
+                )}
+
+                <div className="sidebar-nav-main flex items-center gap-[14px]">
+                  <Icon
+                    size={19}
+                    strokeWidth={isActive ? 2.25 : 1.85}
+                    className={`shrink-0 transition-colors ${
+                      isActive ? 'text-[#E68A2E]' : 'text-white/75 group-hover:text-white'
+                    }`}
+                  />
+                  <span
+                    className="sidebar-label w-[148px] truncate overflow-hidden whitespace-nowrap opacity-100 transition-all duration-200"
                   >
                     {item.label}
                   </span>
-                </Link>
-                {item.children ? (
+                </div>
+
+                {item.badge && (
+                  <span className="sidebar-badge rounded-full bg-white/10 px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.08em] text-white/75">
+                    {item.badge}
+                  </span>
+                )}
+
+                <span
+                  className="sidebar-tooltip pointer-events-none absolute left-full top-1/2 ml-3 -translate-y-1/2 rounded-[7px] border border-[#dfe5ef] bg-white px-3 py-1.5 text-[12px] font-semibold text-[#1B3061] opacity-0 shadow-[0_8px_20px_rgba(27,48,97,0.16)] transition-opacity duration-150 group-hover:opacity-100"
+                  role="tooltip"
+                >
+                  {item.label}
+                </span>
+              </Link>
+              {item.children ? (
+                <div
+                  className={`sidebar-subnav grid transition-[grid-template-rows,opacity] duration-200 ease-out ${
+                    shouldShowChildren ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+                  }`}
+                  aria-hidden={!shouldShowChildren}
+                >
                   <div
-                    className={`sidebar-subnav grid transition-[grid-template-rows,opacity] duration-200 ease-out ${
-                      shouldShowChildren ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+                    className={`overflow-hidden pl-[52px] pr-3 transition-[padding] duration-200 ${
+                      shouldShowChildren ? 'py-1.5' : 'py-0'
                     }`}
-                    aria-hidden={!shouldShowChildren}
                   >
-                    <div
-                      className={`overflow-hidden pl-[52px] pr-3 transition-[padding] duration-200 ${
-                        shouldShowChildren ? 'py-1.5' : 'py-0'
-                      }`}
-                    >
-                      {item.children.map((child) => {
-                        const isChildActive = isActivePath(child.href);
+                    {item.children.map((child) => {
+                      const isChildActive = isActivePath(child.href);
 
-                        return (
-                          <Link
-                            key={child.label}
-                            href={child.href}
-                            tabIndex={shouldShowChildren ? undefined : -1}
-                            className={`sidebar-subnav-link relative flex h-8 items-center rounded-[6px] px-3 pl-4 text-[12px] font-medium transition-colors ${
-                              isChildActive
-                                ? 'bg-white/10 text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]'
-                                : 'text-white/70 hover:bg-white/10 hover:text-white'
-                            }`}
-                            aria-current={isChildActive ? 'page' : undefined}
-                          >
-                            {isChildActive ? (
-                              <span
-                                aria-hidden="true"
-                                className="absolute bottom-1.5 left-0 top-1.5 w-0.5 rounded-full bg-[#E68A2E]"
-                              />
-                            ) : null}
-                            <span className="sidebar-label truncate overflow-hidden whitespace-nowrap opacity-100 transition-all duration-200">
-                              {child.label}
-                            </span>
-                          </Link>
-                        );
-                      })}
-                    </div>
+                      return (
+                        <Link
+                          key={child.label}
+                          href={child.href}
+                          tabIndex={shouldShowChildren ? undefined : -1}
+                          className={`sidebar-subnav-link relative flex h-8 items-center rounded-[6px] px-3 pl-4 text-[12px] font-medium transition-colors ${
+                            isChildActive
+                              ? 'bg-white/10 text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]'
+                              : 'text-white/70 hover:bg-white/10 hover:text-white'
+                          }`}
+                          aria-current={isChildActive ? 'page' : undefined}
+                        >
+                          {isChildActive ? (
+                            <span
+                              aria-hidden="true"
+                              className="absolute bottom-1.5 left-0 top-1.5 w-0.5 rounded-full bg-[#E68A2E]"
+                            />
+                          ) : null}
+                          <span className="sidebar-label truncate overflow-hidden whitespace-nowrap opacity-100 transition-all duration-200">
+                            {child.label}
+                          </span>
+                        </Link>
+                      );
+                    })}
                   </div>
-                ) : null}
-              </div>
-            );
-          })}
-        </nav>
-      </div>
-
-      
+                </div>
+              ) : null}
+            </div>
+          );
+        })}
+      </nav>
 
       {/* Sidebar Footer Profile */}
-      <div className="border-t border-white/10 px-4 py-[18px]">
+      <div className="shrink-0 border-t border-white/10 px-4 py-[18px]">
         <Link
           href="/settings"
           aria-label="Open settings"

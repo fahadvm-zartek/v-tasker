@@ -134,3 +134,24 @@ test('normalizeTasksPage exposes supplied metrics and uses N/A for unavailable c
     completed: '1',
   });
 });
+
+test('normalizeTaskDetail uses poster_name and normalizes status_timeline', () => {
+  const detail = taskService.normalizeTaskDetail({
+    id: 10,
+    title: 'AC servicing',
+    poster_name: 'new admin',
+    status: 'IN_PROGRESS',
+    status_timeline: [
+      { title: 'Task Posted', timestamp: '2026-09-12 09:00:00', detail: 'Task created', tone: 'done' },
+      { title: 'In Progress', timestamp: '2026-09-12 10:00:00', detail: 'Work started', tone: 'active' },
+    ],
+  });
+
+  assert.equal(detail.poster.name, 'new admin');
+  assert.equal(detail.statusTimeline.length, 2);
+  assert.equal(detail.statusTimeline[0].title, 'Task Posted');
+  assert.equal(detail.statusTimeline[0].tone, 'done');
+  assert.equal(detail.statusTimeline[1].title, 'In Progress');
+  assert.equal(detail.statusTimeline[1].tone, 'active');
+});
+

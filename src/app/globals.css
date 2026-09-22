@@ -410,3 +410,26 @@ html[data-sidebar-collapsed="true"] .sidebar-subnav {
 html[data-sidebar-collapsed="true"] .sidebar-tooltip {
   display: block;
 }
+
+.sidebar-nav-container {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+.sidebar-nav-container::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sidebar-nav-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-nav-container::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+.sidebar-nav-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.4);
+}
+

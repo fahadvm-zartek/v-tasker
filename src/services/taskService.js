@@ -182,11 +182,94 @@ const requestJson = async (url, { authenticatedFetch, ...options } = {}) => {
   });
 };
 
+const normalizeTimelineItem = (item) => {
+  if (typeof item === 'string') {
+    return {
+      title: item,
+      time: EMPTY_VALUE,
+      detail: '',
+      tone: 'done',
+    };
+  }
+  if (!item || typeof item !== 'object') return null;
+
+  const title = String(pickFirst(
+    item.title,
+    item.name,
+    item.status,
+    item.event,
+    item.action,
+    item.stage,
+    item.step,
+    'Task Step',
+  ));
+
+  const rawTime = pickFirst(
+    item.time,
+    item.timestamp,
+    item.created_at,
+    item.createdAt,
+    item.date,
+    item.datetime,
+    '',
+  );
+  let timeStr = String(rawTime || EMPTY_VALUE);
+  if (rawTime) {
+    const formatted = formatDateCreated(rawTime);
+    if (formatted && formatted !== EMPTY_VALUE) {
+      timeStr = formatted;
+    }
+  }
+
+  const detail = String(pickFirst(
+    item.detail,
+    item.description,
+    item.message,
+    item.details,
+    item.comment,
+    '',
+  ));
+
+  const note = item.note || item.notes ? String(item.note ?? item.notes) : undefined;
+
+  let tone = 'done';
+  const toneRaw = String(pickFirst(item.tone, item.state, item.status_type, item.status, '')).toLowerCase();
+
+  if (['done', 'completed', 'success', 'finished', 'passed'].includes(toneRaw)) {
+    tone = 'done';
+  } else if (['active', 'in_progress', 'inprogress', 'current', 'ongoing'].includes(toneRaw)) {
+    tone = 'active';
+  } else if (['danger', 'error', 'failed', 'cancelled', 'canceled', 'dispute', 'disputed'].includes(toneRaw)) {
+    tone = 'danger';
+  } else if (['pending', 'upcoming', 'waiting'].includes(toneRaw)) {
+    tone = 'pending';
+  } else if (item.is_done === true || item.completed === true) {
+    tone = 'done';
+  } else if (item.is_active === true) {
+    tone = 'active';
+  }
+
+  return {
+    title,
+    time: timeStr,
+    detail,
+    tone,
+    ...(note ? { note } : {}),
+  };
+};
+
 const normalizeTaskDetail = (task) => {
   if (!task || typeof task !== 'object') return null;
   const rawId = String(pickFirst(task.id, task.task_id, task.uuid, 'unknown'));
   const poster = task.poster ?? task.customer ?? task.created_by ?? task.owner ?? {};
   const doer = task.doer ?? task.provider ?? task.assignee ?? task.worker ?? null;
+  const posterName = String(pickFirst(task.poster_name, task.posterName, task.customer_name, task.customerName, buildName(poster)));
+
+  const rawTimeline = pickFirst(task.status_timeline, task.statusTimeline, task.timeline, null);
+  const statusTimeline = Array.isArray(rawTimeline)
+    ? rawTimeline.map(normalizeTimelineItem).filter(Boolean)
+    : null;
+
   return {
     id: rawId,
     displayId: rawId.startsWith('#') ? rawId : `#${rawId}`,
@@ -203,9 +286,9 @@ const normalizeTaskDetail = (task) => {
     status: String(pickFirst(task.status, EMPTY_VALUE)),
     priority: String(pickFirst(task.priority, '')),
     poster: {
-      id: String(pickFirst(poster?.id, poster?.user_id, '')),
-      name: buildName(poster),
-      email: String(pickFirst(poster?.email, '')),
+      id: String(pickFirst(poster?.id, poster?.user_id, task.poster_id, task.posterId, '')),
+      name: posterName,
+      email: String(pickFirst(poster?.email, task.poster_email, task.posterEmail, '')),
     },
     doer: doer ? {
       id: String(pickFirst(doer?.id, doer?.user_id, '')),
@@ -215,6 +298,7 @@ const normalizeTaskDetail = (task) => {
     images: Array.isArray(task.images) ? task.images : [],
     viewsCount: Number(pickFirst(task.views_count, task.views, 0)) || 0,
     dateCreated: String(pickFirst(task.date_created, task.created_at, EMPTY_VALUE)),
+    statusTimeline,
     raw: task,
   };
 };

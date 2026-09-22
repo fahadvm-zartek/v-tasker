@@ -849,6 +849,10 @@ const formatTaskLocation = (task: TaskDetail | null): string => {
 };
 
 const buildTimeline = (task: TaskDetail | null, dispute: unknown | null): TimelineItem[] => {
+  if (task?.statusTimeline && Array.isArray(task.statusTimeline) && task.statusTimeline.length > 0) {
+    return task.statusTimeline as TimelineItem[];
+  }
+
   const dateStr = task?.dateCreated ? formatDateCreated(task.dateCreated) : 'N/A';
   const statusNorm = String(task?.status ?? '').toLowerCase().replace(/[\s_-]+/g, '');
 
@@ -960,15 +964,16 @@ export default function TaskDetailPage({
 
     const loadAll = async () => {
       const { fetchTaskById } = await import('../../../../services/taskService');
-      const { fetchOffersByTask } = await import('../../../../services/offerService');
+      const { fetchOffersByTask, fetchOfferMessages, normalizeOffer } = await import('../../../../services/offerService');
       const { fetchTaskQuestions } = await import('../../../../services/taskService');
       const { fetchDisputesPage } = await import('../../../../services/disputeService');
       const { fetchChatRoomsPage, fetchChatRoomMessages } = await import('../../../../services/chatModerationService');
 
       // Load task detail
       setIsLoadingTask(true);
+      let detail: TaskDetail | null = null;
       try {
-        const detail = await fetchTaskById(taskId);
+        detail = await fetchTaskById(taskId);
         if (!cancelled) setTaskDetail(detail);
       } catch (err) {
         if (!cancelled) setApiError(err instanceof Error ? err.message : 'Failed to load task details');
@@ -978,8 +983,17 @@ export default function TaskDetailPage({
 
       // Load offers in parallel
       setIsLoadingOffers(true);
+      let offersData: NormalizedOffer[] = [];
       try {
-        const offersData = await fetchOffersByTask(taskId);
+        offersData = await fetchOffersByTask(taskId);
+        // Fallback: check if task detail raw payload contains offers
+        if ((!offersData || offersData.length === 0) && detail?.raw) {
+          const rawObj = detail.raw as Record<string, unknown>;
+          const rawOffers = (rawObj.offers ?? rawObj.offers_list ?? rawObj.offer_set) as unknown;
+          if (Array.isArray(rawOffers) && rawOffers.length > 0) {
+            offersData = rawOffers.map((o, i) => normalizeOffer(o as Record<string, unknown>, i)).filter(Boolean) as NormalizedOffer[];
+          }
+        }
         if (!cancelled) setLiveOffers(offersData);
       } catch {
         if (!cancelled) setLiveOffers([]);
@@ -1014,24 +1028,45 @@ export default function TaskDetailPage({
         // Ignore dispute fetch errors
       }
 
-      // Load chat rooms and messages
+      // Load chat rooms and messages, with fallback to offer messages
       try {
+        let loadedMsgs: NormalizedMessage[] = [];
         const roomData = await fetchChatRoomsPage({ task: taskId, pageSize: 1 });
         if (!cancelled && roomData.rooms.length > 0) {
           const roomId = String(roomData.rooms[0].raw?.id ?? '');
           if (roomId) {
             const msgs = await fetchChatRoomMessages(roomId);
-            if (!cancelled && Array.isArray(msgs)) {
+            if (Array.isArray(msgs)) {
               const { normalizeMessage } = await import('../../../../services/offerService');
-              const normalized = (msgs as unknown[]).map((m, i) => {
+              loadedMsgs = (msgs as unknown[]).map((m, i) => {
                 if (typeof m === 'object' && m !== null) {
                   return normalizeMessage(m as Record<string, unknown>, i);
                 }
                 return null;
-              }).filter(Boolean) as import('../../../../services/offerService').NormalizedMessage[];
-              setChatMessages(normalized);
+              }).filter(Boolean) as NormalizedMessage[];
             }
           }
+        }
+
+        // If no chat room messages, fallback to offer messages (e.g. GET /api/offers/10/messages/)
+        if (loadedMsgs.length === 0) {
+          const offerIdsToTry = [taskId, ...(offersData ?? []).map((o) => o.id)];
+          for (const offerIdCandidate of offerIdsToTry) {
+            if (!offerIdCandidate) continue;
+            try {
+              const offerMsgs = await fetchOfferMessages(offerIdCandidate);
+              if (Array.isArray(offerMsgs) && offerMsgs.length > 0) {
+                loadedMsgs = offerMsgs;
+                break;
+              }
+            } catch {
+              // Try next candidate
+            }
+          }
+        }
+
+        if (!cancelled) {
+          setChatMessages(loadedMsgs);
         }
       } catch {
         // Ignore chat fetch errors
