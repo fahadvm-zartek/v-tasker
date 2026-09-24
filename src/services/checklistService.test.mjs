@@ -2,6 +2,32 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import service from './checklistService.js';
 
+for (const type of ['single_select', 'multiple_select']) {
+  test(`${type} options are trimmed, saved and loaded for service editing`, async () => {
+    let stored = [{ id: 20, label: 'Old option', order: 1 }];
+    const component = () => ({ id: 3, label: 'Choose', component_type: type === 'multiple_select' ? 'multi_select' : type, required: false, order: 1, options: stored });
+    const options = { authenticatedFetch: async (url, request) => {
+      let payload = {};
+      if (request.method === 'GET') {
+        payload = url.includes('?') ? [{ id: 1, status: 'draft' }]
+          : url.endsWith('/checklist-definitions/1/') ? { id: 1, status: 'draft', sections: [{ id: 2, components: [component()] }] }
+          : component();
+      } else if (request.method === 'DELETE') {
+        stored = [];
+      } else if (request.method === 'POST' && url.endsWith('/checklist-options/')) {
+        const body = JSON.parse(request.body);
+        assert.ok(body.label.trim());
+        stored.push({ id: 30 + stored.length, label: body.label, order: body.order });
+      }
+      return { ok: true, json: async () => payload };
+    } };
+    await service.saveChecklistQuestions('267', 'Cleaning', [{ id: '3', question: 'Choose', type, required: false, order: 1, options: ['Option 1', ' Option 2', ' Option 3 ', ''] }], options);
+    const result = await service.fetchChecklist('267', options);
+    assert.deepEqual(result.questions[0].options, ['Option 1', 'Option 2', 'Option 3']);
+    assert.equal(result.questions[0].type, type);
+  });
+}
+
 test('loads subcategory definitions and reads nested components from detail', async () => {
   const calls = [];
   const result = await service.fetchChecklist('267', { authenticatedFetch: async (url) => {

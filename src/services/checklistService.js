@@ -107,6 +107,10 @@ const reorderChecklistQuestions = async (questions, options = {}) => {
 };
 
 const saveChecklistQuestions = async (subcategoryId, serviceName, questions, options = {}) => {
+  questions = questions.map(question => ({
+    ...question,
+    options: [...new Set((question.options || []).map(value => value.trim()).filter(Boolean))],
+  }));
   for (const question of questions) {
     if (!question.question?.trim()) throw new Error('Field name is required.');
     getComponentNumber(question.type);

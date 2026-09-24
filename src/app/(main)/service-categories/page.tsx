@@ -660,10 +660,10 @@ const SubcategoryFormModal = ({
                       <label className="text-[11px] font-medium text-[#334155]">Options</label>
                       <input
                         type="text"
-                        value={question.options.join(', ')}
+                        value={question.options.join(',')}
                         onChange={(event) =>
                           onUpdateChecklistQuestion(questionIndex, {
-                            options: event.currentTarget.value.split(',').map((option) => option.trim()).filter(Boolean),
+                            options: event.currentTarget.value.split(','),
                           })
                         }
                         placeholder="Regular, Deep Cleaning"
