@@ -50,6 +50,10 @@ type ServiceMetric = {
   dotClass: string;
 };
 
+type GroupedService = ApiServiceCategory | (ServiceSubcategory & {
+  categoryType: ApiServiceCategory['categoryType'];
+});
+
 type ServiceGroup = {
   categoryType: ApiServiceCategory['categoryType'];
   title: string;
@@ -59,7 +63,7 @@ type ServiceGroup = {
   iconWrapClass: string;
   dotClass: string;
   categories: ApiServiceCategory[];
-  subCategories: any[];
+  subCategories: GroupedService[];
 };
 
 type SubcategoryFormState = {
@@ -253,7 +257,7 @@ const groupCategoriesByType = (categories: ApiServiceCategory[], searchTerm = ''
       return matchesType && matchesSearch;
     });
 
-    const subCategories = matchingCategories.flatMap((category) => {
+    const subCategories = matchingCategories.flatMap<GroupedService>((category) => {
       if (category.subcategories && category.subcategories.length > 0) {
         return category.subcategories
           .filter((sub) => !normalizedSearch || sub.name.toLowerCase().includes(normalizedSearch))
@@ -270,7 +274,7 @@ const groupCategoriesByType = (categories: ApiServiceCategory[], searchTerm = ''
       categoryType,
       ...meta,
       categories: matchingCategories,
-      subCategories: subCategories as any[],
+      subCategories,
     };
   });
 };
@@ -1582,7 +1586,7 @@ const CategoryCard = ({
                   <span className="truncate">{subCategory.name}</span>
                 </button>
                 <span className="rounded-full bg-[#eef2f6] px-2 py-0.5 text-[10px] font-bold text-[#64748b]">
-                  {Array.isArray(subCategory.subcategories) && subCategory.subcategories.length > 0
+                  {'subcategories' in subCategory && subCategory.subcategories.length > 0
                     ? subCategory.subcategories.length
                     : Array.isArray(subCategory.keywords)
                       ? subCategory.keywords.length
@@ -1645,7 +1649,7 @@ const ServiceCategoriesPage = () => {
       serviceGroups.map((group) => ({
         value: String(
           group.subCategories.reduce(
-            (total, item) => total + (item.subcategories && item.subcategories.length > 0 ? item.subcategories.length : 1),
+            (total, item) => total + ('subcategories' in item && item.subcategories.length > 0 ? item.subcategories.length : 1),
             0,
           ),
         ),
