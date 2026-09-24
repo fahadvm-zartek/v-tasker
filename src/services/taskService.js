@@ -32,6 +32,7 @@ const getTasksEndpoint = (baseUrl, query = {}) => {
   appendQueryParam(params, 'state', query.state);
   appendQueryParam(params, 'suburb', query.suburb);
   appendQueryParam(params, 'task_type', query.taskType);
+  appendQueryParam(params, 'has_offers', query.hasOffers);
   appendQueryParam(params, 'date_created_after', query.dateCreatedAfter);
   appendQueryParam(params, 'date_created_before', query.dateCreatedBefore);
   const queryString = params.toString();
@@ -114,7 +115,7 @@ const normalizeTaskSummary = (task, index = 0) => {
     poster: { name: posterName, initials: buildInitials(posterName), avatarClass: 'bg-[#eef2ff] text-[#1B3061]' },
     doer: { name: doerName, initials: buildInitials(doerName), avatarClass: 'bg-[#e5e7eb] text-[#334155]' },
     category: String(pickFirst(task.category?.name, task.category_name, task.category, task.task_type, EMPTY_VALUE)),
-    service: String(pickFirst(task.service?.name, task.service_name, task.subcategory?.name, task.sub_category_name, EMPTY_VALUE)),
+    service: String(pickFirst(task.subcategory_name, task.service?.name, task.service_name, task.subcategory?.name, task.sub_category_name, EMPTY_VALUE)),
     status,
     dateCreated,
   };
@@ -147,9 +148,9 @@ const normalizeTasksPage = (payload) => {
 };
 
 const fetchTasksPage = async (options = {}) => {
-  const { authenticatedFetch, baseUrl, page, pageSize, search, status, state, suburb, taskType, dateCreatedAfter, dateCreatedBefore, ...requestOptions } = options;
+  const { authenticatedFetch, baseUrl, page, pageSize, search, status, state, suburb, taskType, hasOffers, dateCreatedAfter, dateCreatedBefore, ...requestOptions } = options;
   const fetcher = authenticatedFetch || defaultAuthenticatedFetch;
-  const response = await fetcher(getTasksEndpoint(baseUrl, { page, pageSize, search, status, state, suburb, taskType, dateCreatedAfter, dateCreatedBefore }), {
+  const response = await fetcher(getTasksEndpoint(baseUrl, { page, pageSize, search, status, state, suburb, taskType, hasOffers, dateCreatedAfter, dateCreatedBefore }), {
     ...requestOptions,
     method: 'GET',
     headers: { Accept: 'application/json', ...(requestOptions.headers || {}) },
@@ -259,7 +260,7 @@ const normalizeTimelineItem = (item) => {
 };
 
 const normalizeTaskDetail = (task) => {
-  if (!task || typeof task !== 'object') return null;
+  if (!task || typeof task !== 'object' || Object.keys(task).length === 0) return null;
   const rawId = String(pickFirst(task.id, task.task_id, task.uuid, 'unknown'));
   const poster = task.poster ?? task.customer ?? task.created_by ?? task.owner ?? {};
   const doer = task.doer ?? task.provider ?? task.assignee ?? task.worker ?? null;

@@ -15,6 +15,7 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
+import { validateLocationForm } from '../../../services/locationValidation';
 import { DashboardPageShell, DashboardPanel } from '../../../components';
 import {
   fetchAllCountries,
@@ -136,7 +137,7 @@ const Toggle = ({
     aria-pressed={enabled}
     disabled={disabled}
     onClick={onClick}
-    className={`relative h-6 w-11 rounded-full transition-colors ${
+    className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
       enabled ? 'bg-[#20c997]' : 'bg-[#dc2626]'
     } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
   >
@@ -200,8 +201,12 @@ const AddCountryModal = ({
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const fieldErrors = validateLocationForm('country', { name, code });
 
   useEffect(() => {
+    setTouched({});
+    setError('');
     if (initialData) {
       setName(initialData.name || '');
       setCode(initialData.code || '');
@@ -216,10 +221,9 @@ const AddCountryModal = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) {
-      setError('Country name is required');
-      return;
-    }
+    setTouched({ name: true, code: true });
+    setError('');
+    if (Object.keys(fieldErrors).length > 0) return;
     setIsSubmitting(true);
     try {
       await onSubmit(name.trim(), code.trim());
@@ -251,27 +255,39 @@ const AddCountryModal = ({
             <X size={20} />
           </button>
         </div>
-        <form onSubmit={handleSubmit} className="space-y-4 p-6">
+        <form noValidate onSubmit={handleSubmit} className="space-y-4 p-6">
           {error && <div className="text-xs text-rose-600 font-medium">{error}</div>}
           <div className="space-y-1">
-            <label className="text-[14px] font-medium text-[#111827]">Country Name</label>
+            <label htmlFor="country-name" className="text-[14px] font-medium text-[#111827]">Country Name</label>
             <input
               type="text"
+              id="country-name"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => { setName(e.target.value); setTouched((current) => ({ ...current, name: true })); setError(''); }}
+              onBlur={() => setTouched((current) => ({ ...current, name: true }))}
+              required
+              aria-invalid={Boolean(touched.name && fieldErrors.name)}
+              aria-describedby="country-name-error"
               placeholder="e.g. Australia"
               className="h-11 w-full rounded-[8px] border border-[#d7dee9] px-3 text-[15px] outline-none focus:border-[#1B3061]"
             />
+            <p id="country-name-error" aria-live="polite" className="text-xs font-medium text-rose-600">{touched.name ? fieldErrors.name : null}</p>
           </div>
           <div className="space-y-1">
-            <label className="text-[14px] font-medium text-[#111827]">Country Code (ISO)</label>
+            <label htmlFor="country-code" className="text-[14px] font-medium text-[#111827]">Country Code (ISO)</label>
             <input
               type="text"
+              id="country-code"
               value={code}
-              onChange={(e) => setCode(e.target.value)}
+              onChange={(e) => { setCode(e.target.value); setTouched((current) => ({ ...current, code: true })); setError(''); }}
+              onBlur={() => setTouched((current) => ({ ...current, code: true }))}
+              required
+              aria-invalid={Boolean(touched.code && fieldErrors.code)}
+              aria-describedby="country-code-error"
               placeholder="e.g. AU"
               className="h-11 w-full rounded-[8px] border border-[#d7dee9] px-3 text-[15px] outline-none focus:border-[#1B3061]"
             />
+            <p id="country-code-error" aria-live="polite" className="text-xs font-medium text-rose-600">{touched.code ? fieldErrors.code : null}</p>
           </div>
           <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#e6ebf3]">
             <button
@@ -312,8 +328,12 @@ const AddStateModal = ({
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const fieldErrors = validateLocationForm('state', { name, code });
 
   useEffect(() => {
+    setTouched({});
+    setError('');
     if (initialData) {
       setName(initialData.name || '');
       setCode(initialData.abbreviation || initialData.code || '');
@@ -328,10 +348,9 @@ const AddStateModal = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) {
-      setError('State / Region name is required');
-      return;
-    }
+    setTouched({ name: true, code: true });
+    setError('');
+    if (Object.keys(fieldErrors).length > 0) return;
     setIsSubmitting(true);
     try {
       await onSubmit(name.trim(), code.trim());
@@ -359,27 +378,39 @@ const AddStateModal = ({
             <X size={20} />
           </button>
         </div>
-        <form onSubmit={handleSubmit} className="space-y-4 p-6">
+        <form noValidate onSubmit={handleSubmit} className="space-y-4 p-6">
           {error && <div className="text-xs text-rose-600 font-medium">{error}</div>}
           <div className="space-y-1">
-            <label className="text-[14px] font-medium text-[#111827]">State / Region Name</label>
+            <label htmlFor="state-name" className="text-[14px] font-medium text-[#111827]">State / Region Name</label>
             <input
               type="text"
+              id="state-name"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => { setName(e.target.value); setTouched((current) => ({ ...current, name: true })); setError(''); }}
+              onBlur={() => setTouched((current) => ({ ...current, name: true }))}
+              required
+              aria-invalid={Boolean(touched.name && fieldErrors.name)}
+              aria-describedby="state-name-error"
               placeholder="e.g. New South Wales"
               className="h-11 w-full rounded-[8px] border border-[#d7dee9] px-3 text-[15px] outline-none focus:border-[#1B3061]"
             />
+            <p id="state-name-error" aria-live="polite" className="text-xs font-medium text-rose-600">{touched.name ? fieldErrors.name : null}</p>
           </div>
           <div className="space-y-1">
-            <label className="text-[14px] font-medium text-[#111827]">State Abbreviation</label>
+            <label htmlFor="state-code" className="text-[14px] font-medium text-[#111827]">State Abbreviation</label>
             <input
               type="text"
+              id="state-code"
               value={code}
-              onChange={(e) => setCode(e.target.value)}
+              onChange={(e) => { setCode(e.target.value); setTouched((current) => ({ ...current, code: true })); setError(''); }}
+              onBlur={() => setTouched((current) => ({ ...current, code: true }))}
+              required
+              aria-invalid={Boolean(touched.code && fieldErrors.code)}
+              aria-describedby="state-code-error"
               placeholder="e.g. NSW"
               className="h-11 w-full rounded-[8px] border border-[#d7dee9] px-3 text-[15px] outline-none focus:border-[#1B3061]"
             />
+            <p id="state-code-error" aria-live="polite" className="text-xs font-medium text-rose-600">{touched.code ? fieldErrors.code : null}</p>
           </div>
           <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#e6ebf3]">
             <button
@@ -431,8 +462,12 @@ const AddSuburbModal = ({
   const [longitude, setLongitude] = useState('151.2093');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const fieldErrors = validateLocationForm('suburb', { name, postcode, regionId });
 
   useEffect(() => {
+    setTouched({});
+    setError('');
     if (initialData) {
       setName(initialData.name || '');
       setPostcode(initialData.postcode || '');
@@ -449,14 +484,9 @@ const AddSuburbModal = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) {
-      setError('Suburb name is required.');
-      return;
-    }
-    if (!postcode.trim()) {
-      setError('Postcode is required.');
-      return;
-    }
+    setTouched({ name: true, postcode: true, regionId: true });
+    setError('');
+    if (Object.keys(fieldErrors).length > 0) return;
     setIsSubmitting(true);
     try {
       await onSubmit({
@@ -497,7 +527,7 @@ const AddSuburbModal = ({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6 px-8 py-7">
+        <form noValidate onSubmit={handleSubmit} className="space-y-6 px-8 py-7">
           {error && <div className="text-sm font-medium text-rose-600">{error}</div>}
           <div className="space-y-2">
             <div className="flex items-center justify-between gap-4">
@@ -520,10 +550,15 @@ const AddSuburbModal = ({
               id="suburb-name"
               type="text"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => { setName(e.target.value); setTouched((current) => ({ ...current, name: true })); setError(''); }}
+              onBlur={() => setTouched((current) => ({ ...current, name: true }))}
+              required
+              aria-invalid={Boolean(touched.name && fieldErrors.name)}
+              aria-describedby="suburb-name-error"
               placeholder="e.g. Surry Hills"
               className="h-14 w-full rounded-[8px] border border-[#d7dee9] bg-white px-4 text-[17px] text-[#111827] outline-hidden placeholder:text-[#6b7280] focus:border-[#1B3061] focus:ring-2 focus:ring-[#1B3061]/10"
             />
+            <p id="suburb-name-error" aria-live="polite" className="text-xs font-medium text-rose-600">{touched.name ? fieldErrors.name : null}</p>
           </div>
 
           <div className="space-y-2">
@@ -534,11 +569,17 @@ const AddSuburbModal = ({
               id="suburb-postcode"
               type="text"
               inputMode="numeric"
+              pattern="[0-9]{4}"
               value={postcode}
-              onChange={(e) => setPostcode(e.target.value)}
+              onChange={(e) => { setPostcode(e.target.value); setTouched((current) => ({ ...current, postcode: true })); setError(''); }}
+              onBlur={() => setTouched((current) => ({ ...current, postcode: true }))}
+              required
+              aria-invalid={Boolean(touched.postcode && fieldErrors.postcode)}
+              aria-describedby="suburb-postcode-error"
               placeholder="e.g. 2010"
               className="h-14 w-full rounded-[8px] border border-[#d7dee9] bg-white px-4 text-[17px] text-[#111827] outline-hidden placeholder:text-[#6b7280] focus:border-[#1B3061] focus:ring-2 focus:ring-[#1B3061]/10"
             />
+            <p id="suburb-postcode-error" aria-live="polite" className="text-xs font-medium text-rose-600">{touched.postcode ? fieldErrors.postcode : null}</p>
           </div>
 
           <div className="space-y-2">
@@ -549,7 +590,11 @@ const AddSuburbModal = ({
               <select
                 id="suburb-region"
                 value={regionId}
-                onChange={(e) => setRegionId(e.target.value)}
+                onChange={(e) => { setRegionId(e.target.value); setTouched((current) => ({ ...current, regionId: true })); setError(''); }}
+              onBlur={() => setTouched((current) => ({ ...current, regionId: true }))}
+              required
+              aria-invalid={Boolean(touched.regionId && fieldErrors.regionId)}
+              aria-describedby="suburb-regionId-error"
                 className="h-14 w-full appearance-none rounded-[8px] border border-[#d7dee9] bg-white px-4 pr-11 text-[17px] text-[#111827] outline-hidden focus:border-[#1B3061] focus:ring-2 focus:ring-[#1B3061]/10"
               >
                 <option value="" disabled>
@@ -561,6 +606,7 @@ const AddSuburbModal = ({
                   </option>
                 ))}
               </select>
+            <p id="suburb-regionId-error" aria-live="polite" className="text-xs font-medium text-rose-600">{touched.regionId ? fieldErrors.regionId : null}</p>
               <ChevronRight
                 aria-hidden="true"
                 className="pointer-events-none absolute right-4 top-1/2 rotate-90 text-[#6b7280]"
@@ -972,14 +1018,19 @@ const LocationsPage = () => {
   const handleSaveState = async (name: string, code: string) => {
     if (!selectedCountry) return;
     if (stateToEdit) {
-      await updateState(stateToEdit.id, { name, code });
+      await updateState(stateToEdit.id, {
+        name,
+        abbreviation: code,
+        country: selectedCountry.id,
+        is_active: stateToEdit.active ?? true,
+      });
       showToast('success', `State "${name}" updated successfully`);
     } else {
       const created = await createState({
-        countryId: selectedCountry.id,
-        countryName: selectedCountry.name,
+        country: selectedCountry.id,
         name,
-        code,
+        abbreviation: code,
+        is_active: true,
       });
       setSelectedRegion(created);
       showToast('success', `State "${name}" added successfully`);
@@ -1081,8 +1132,8 @@ const LocationsPage = () => {
     totalSuburbsCount > 0 ? `Showing ${startItem}-${endItem} of ${totalSuburbsCount}` : 'Showing 0 of 0';
 
   return (
-    <DashboardPageShell contentClassName="pb-4">
-      <div className="animate-dashboard-entry grid min-h-[calc(100vh-98px)] gap-6 lg:grid-cols-[280px_340px_minmax(0,1fr)]">
+    <DashboardPageShell contentClassName="pb-4 @container">
+      <div className="animate-dashboard-entry grid min-h-[calc(100vh-98px)] gap-6 @[1100px]:grid-cols-[minmax(200px,280px)_minmax(240px,340px)_minmax(360px,1fr)]">
         {/* Countries Panel */}
         <DashboardPanel className="flex min-h-[560px] min-w-0 flex-col">
           <div className="space-y-5 p-5">
@@ -1265,7 +1316,7 @@ const LocationsPage = () => {
         </DashboardPanel>
 
         {/* Suburbs Panel */}
-        <DashboardPanel className="flex min-h-[560px] flex-col">
+        <DashboardPanel className="flex min-h-[560px] min-w-0 flex-col">
           <div className="space-y-5 p-6">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
@@ -1298,14 +1349,14 @@ const LocationsPage = () => {
             />
           </div>
 
-          <div className="w-full">
+          <div className="w-full min-w-0">
             <table className="ui-table w-full table-fixed">
               <thead>
                 <tr className="ui-table-head h-[42px] text-left">
-                  <th className="w-[33%] px-4 text-[11px] sm:px-6">Suburb Name</th>
-                  <th className="w-[25%] px-3 text-[11px] sm:px-6">Map View</th>
-                  <th className="w-[18%] px-3 text-[11px] sm:px-6">Postcode</th>
-                  <th className="w-[24%] px-4 text-right text-[11px] sm:px-6">Actions</th>
+                  <th className="break-words px-3 text-[11px]">Suburb Name</th>
+                  <th className="w-[84px] px-2 text-[11px]">Map View</th>
+                  <th className="w-[76px] px-2 text-[11px]">Postcode</th>
+                  <th className="w-[114px] px-3 text-right text-[11px]">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -1333,10 +1384,10 @@ const LocationsPage = () => {
                 ) : (
                   paginatedSuburbs.map((suburbItem) => (
                     <tr key={suburbItem.id} className="ui-table-row h-[58px]">
-                      <td className="break-words px-4 text-[13px] font-bold text-[#1f2937] sm:px-6">
+                      <td className="break-words px-3 text-[13px] font-bold text-[#1f2937]">
                         {suburbItem.name}
                       </td>
-                      <td className="px-3 sm:px-6">
+                      <td className="px-2">
                         <button
                           type="button"
                           onClick={() => {
@@ -1349,11 +1400,11 @@ const LocationsPage = () => {
                           <MapPin size={14} strokeWidth={2.3} className="text-[#64e342]" />
                         </button>
                       </td>
-                      <td className="px-3 text-[13px] font-medium text-[#64748b] sm:px-6">
+                      <td className="px-2 text-[13px] font-medium text-[#64748b]">
                         {suburbItem.postcode}
                       </td>
-                      <td className="px-4 sm:px-6">
-                        <div className="flex items-center justify-end gap-3">
+                      <td className="px-3">
+                        <div className="flex flex-nowrap items-center justify-end gap-2 [&>button]:shrink-0">
                           <button
                             type="button"
                             aria-label={`Edit ${suburbItem.name}`}

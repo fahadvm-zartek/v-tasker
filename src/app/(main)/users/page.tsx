@@ -2,6 +2,7 @@
 
 import {
   Activity,
+  AlertTriangle,
   Ban,
   ChevronRight,
   Clock3,
@@ -19,112 +20,16 @@ import {
   DashboardPageShell,
   DashboardPagination,
   DashboardPanel,
-  dashboardButtonClass,
-  cn,
 } from '../../../components';
+import { fetchAdminDashboard } from '../../../services/adminService';
+import type { AdminDashboardData } from '../../../services/adminService';
 import { fetchUsersPage } from '../../../services/userService';
 import type { UserSummary as User } from '../../../services/userService';
 import UsersFilterToolbar, { DEFAULT_USER_FILTERS } from './UsersFilterToolbar';
 import type { UsersFilterState } from './UsersFilterToolbar';
 
-type MetricCard = {
-  title: string;
-  value: string;
-  icon: React.ComponentType<{ size?: number; strokeWidth?: number; className?: string }>;
-  iconClass: string;
-  iconWrapClass: string;
-  details?: { label: string; value: string }[];
-  action?: string;
-};
-
-type SummaryCard = {
-  title: string;
-  value?: string;
-  icon: React.ComponentType<{ size?: number; strokeWidth?: number; className?: string }>;
-  iconClass: string;
-  iconWrapClass: string;
-  stats?: { label: string; value: string; dotClass: string }[];
-};
-
-const metrics: MetricCard[] = [
-  {
-    title: 'Total Users',
-    value: 'N/A',
-    icon: Users,
-    iconClass: 'text-[#2563ff]',
-    iconWrapClass: 'bg-[#eaf0ff]',
-    details: [
-      { label: 'Normal:', value: 'N/A' },
-      { label: 'Student:', value: 'N/A' },
-    ],
-  },
-  {
-    title: 'Role: Both',
-    value: 'N/A',
-    icon: UserRoundCheck,
-    iconClass: 'text-[#059669]',
-    iconWrapClass: 'bg-[#dcfaee]',
-  },
-  {
-    title: 'Role: Task Doer',
-    value: 'N/A',
-    icon: UserRoundCog,
-    iconClass: 'text-[#7c3aed]',
-    iconWrapClass: 'bg-[#f0e4ff]',
-  },
-  {
-    title: 'Role: Task Poster',
-    value: 'N/A',
-    icon: FileBadge,
-    iconClass: 'text-[#2563ff]',
-    iconWrapClass: 'bg-[#eaf0ff]',
-  },
-  {
-    title: 'Pending Approvals',
-    value: 'N/A',
-    icon: Clock3,
-    iconClass: 'text-[#d97706]',
-    iconWrapClass: 'bg-[#fff0d8]',
-    action: 'Verification Requests',
-  },
-];
-
-const summaries: SummaryCard[] = [
-  {
-    title: 'Verification Status',
-    icon: ShieldCheck,
-    iconClass: 'text-[#6d5cff]',
-    iconWrapClass: 'bg-[#ece8ff]',
-    stats: [
-      { label: 'Verified', value: 'N/A', dotClass: 'bg-[#16a34a]' },
-      { label: 'Unverified', value: 'N/A', dotClass: 'bg-[#d18a00]' },
-    ],
-  },
-  {
-    title: 'User Activity',
-    icon: Activity,
-    iconClass: 'text-[#637083]',
-    iconWrapClass: 'bg-[#eef2f6]',
-    stats: [
-      { label: 'Active', value: 'N/A', dotClass: 'bg-[#0284c7]' },
-      { label: 'Inactive', value: 'N/A', dotClass: 'bg-[#9aa4b2]' },
-    ],
-  },
-  {
-    title: 'Total Suspended Users',
-    value: 'N/A',
-    icon: Ban,
-    iconClass: 'text-[#ef4444]',
-    iconWrapClass: 'bg-[#ffe1e1]',
-  },
-  {
-    title: 'Expired Student Users',
-    value: 'N/A',
-    icon: FileBadge,
-    iconClass: 'text-[#ea7a18]',
-    iconWrapClass: 'bg-[#ffe9d7]',
-  },
-];
+const formatUserStat = (value: unknown): string =>
+  (typeof value === 'number' || (typeof value === 'string' && value.trim() !== '')) && Number.isFinite(Number(value)) ? String(value) : 'N/A';
 
 const roleStyles: Record<string, string> = {
   Admin: 'bg-[#eaf0ff] text-[#1B3061]',
@@ -141,14 +46,21 @@ export default function UsersPage() {
   const [hasNextPage, setHasNextPage] = useState(false);
   const [hasPreviousPage, setHasPreviousPage] = useState(false);
   const [filters, setFilters] = useState<UsersFilterState>(DEFAULT_USER_FILTERS);
-  const [userStats, setUserStats] = useState<any>(null);
+  const [userStats, setUserStats] = useState<AdminDashboardData['users'] | null>(null);
+  const [isStatsLoading, setIsStatsLoading] = useState(true);
+  const [statsError, setStatsError] = useState('');
 
   useEffect(() => {
-    import('../../../services/adminService').then(({ fetchAdminDashboard }) => {
-      fetchAdminDashboard().then((data) => {
+    let isMounted = true;
+    fetchAdminDashboard()
+      .then((data) => {
+        if (!isMounted) return;
         if (data?.users) setUserStats(data.users);
-      });
-    });
+        else setStatsError('User statistics are unavailable.');
+      })
+      .catch(() => { if (isMounted) setStatsError('Unable to load user statistics.'); })
+      .finally(() => { if (isMounted) setIsStatsLoading(false); });
+    return () => { isMounted = false; };
   }, []);
 
   useEffect(() => {
@@ -190,45 +102,45 @@ export default function UsersPage() {
   const dynamicMetrics = useMemo(() => [
     {
       title: 'Total Users',
-      value: userStats?.total !== undefined ? String(userStats.total) : String(totalUsers || 'N/A'),
+      value: formatUserStat(userStats?.total),
       icon: Users,
       iconClass: 'text-[#2563ff]',
       iconWrapClass: 'bg-[#eaf0ff]',
       details: [
-        { label: 'Normal:', value: userStats?.normal !== undefined ? String(userStats.normal) : 'N/A' },
-        { label: 'Student:', value: userStats?.student !== undefined ? String(userStats.student) : 'N/A' },
+        { label: 'Normal:', value: formatUserStat(userStats?.normal_users) },
+        { label: 'Student:', value: formatUserStat(userStats?.student_users) },
       ],
     },
     {
       title: 'Role: Both',
-      value: userStats?.both !== undefined ? String(userStats.both) : 'N/A',
+      value: formatUserStat(userStats?.by_type?.BOTH),
       icon: UserRoundCheck,
       iconClass: 'text-[#059669]',
       iconWrapClass: 'bg-[#dcfaee]',
     },
     {
       title: 'Role: Task Doer',
-      value: userStats?.doer !== undefined ? String(userStats.doer) : 'N/A',
+      value: formatUserStat(userStats?.by_type?.TASK_DOER),
       icon: UserRoundCog,
       iconClass: 'text-[#7c3aed]',
       iconWrapClass: 'bg-[#f0e4ff]',
     },
     {
       title: 'Role: Task Poster',
-      value: userStats?.poster !== undefined ? String(userStats.poster) : 'N/A',
+      value: formatUserStat(userStats?.by_type?.TASK_POSTER),
       icon: FileBadge,
       iconClass: 'text-[#2563ff]',
       iconWrapClass: 'bg-[#eaf0ff]',
     },
     {
       title: 'Pending Approvals',
-      value: userStats?.pending_approvals !== undefined ? String(userStats.pending_approvals) : 'N/A',
+      value: formatUserStat(userStats?.pending_approvals),
       icon: Clock3,
       iconClass: 'text-[#d97706]',
       iconWrapClass: 'bg-[#fff0d8]',
       action: 'Verification Requests',
     },
-  ], [userStats, totalUsers]);
+  ], [userStats]);
 
   const dynamicSummaries = useMemo(() => [
     {
@@ -237,8 +149,8 @@ export default function UsersPage() {
       iconClass: 'text-[#6d5cff]',
       iconWrapClass: 'bg-[#ece8ff]',
       stats: [
-        { label: 'Verified', value: userStats?.verified !== undefined ? String(userStats.verified) : 'N/A', dotClass: 'bg-[#16a34a]' },
-        { label: 'Unverified', value: userStats?.unverified !== undefined ? String(userStats.unverified) : 'N/A', dotClass: 'bg-[#d18a00]' },
+        { label: 'Verified', value: formatUserStat(userStats?.verified), dotClass: 'bg-[#16a34a]' },
+        { label: 'Unverified', value: formatUserStat(userStats?.unverified), dotClass: 'bg-[#d18a00]' },
       ],
     },
     {
@@ -247,20 +159,20 @@ export default function UsersPage() {
       iconClass: 'text-[#637083]',
       iconWrapClass: 'bg-[#eef2f6]',
       stats: [
-        { label: 'Active', value: userStats?.active !== undefined ? String(userStats.active) : 'N/A', dotClass: 'bg-[#0284c7]' },
-        { label: 'Inactive', value: userStats?.inactive !== undefined ? String(userStats.inactive) : 'N/A', dotClass: 'bg-[#9aa4b2]' },
+        { label: 'Active', value: formatUserStat(userStats?.active), dotClass: 'bg-[#0284c7]' },
+        { label: 'Inactive', value: formatUserStat(userStats?.inactive), dotClass: 'bg-[#9aa4b2]' },
       ],
     },
     {
       title: 'Total Suspended Users',
-      value: userStats?.suspended !== undefined ? String(userStats.suspended) : 'N/A',
+      value: formatUserStat(userStats?.suspended_count),
       icon: Ban,
       iconClass: 'text-[#ef4444]',
       iconWrapClass: 'bg-[#ffe1e1]',
     },
     {
       title: 'Expired Student Users',
-      value: userStats?.expired_students !== undefined ? String(userStats.expired_students) : 'N/A',
+      value: formatUserStat(userStats?.expired_student_users),
       icon: FileBadge,
       iconClass: 'text-[#ea7a18]',
       iconWrapClass: 'bg-[#ffe9d7]',
@@ -299,6 +211,7 @@ export default function UsersPage() {
   return (
     <DashboardPageShell>
       <div className="animate-dashboard-entry space-y-6">
+        {statsError && <p role="alert" className="text-[12px] text-[#dc2626]">{statsError}</p>}
         <section
           aria-label="User metrics"
           className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-6"
@@ -307,12 +220,13 @@ export default function UsersPage() {
             <DashboardMetricCard
               key={metric.title}
               title={metric.title}
-              value={metric.value}
+              value={isStatsLoading ? undefined : metric.value}
               icon={metric.icon}
               iconClass={metric.iconClass}
               iconWrapClass={metric.iconWrapClass}
             >
-              {metric.details ? (
+              {isStatsLoading && <div role="status" aria-label="Loading user statistics" className="h-8 w-20 animate-pulse rounded bg-slate-200" />}
+              {!isStatsLoading && metric.details ? (
                 <div className="mt-5 grid grid-cols-2 gap-3 text-[10px] leading-3 text-[#596982]">
                   {metric.details.map((detail) => (
                     <div key={detail.label}>
@@ -335,18 +249,19 @@ export default function UsersPage() {
 
         <section
           aria-label="User status summaries"
-          className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-6 xl:max-w-[calc(80%-5px)]"
+          className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-6"
         >
           {dynamicSummaries.map((summary) => (
             <DashboardMetricCard
               key={summary.title}
               title={summary.title}
-              value={summary.value}
+              value={isStatsLoading ? undefined : summary.value}
               icon={summary.icon}
               iconClass={summary.iconClass}
               iconWrapClass={summary.iconWrapClass}
             >
-              {summary.stats ? (
+              {isStatsLoading && <div role="status" aria-label="Loading user statistics" className="h-8 w-20 animate-pulse rounded bg-slate-200" />}
+              {!isStatsLoading && summary.stats ? (
                 <div className="grid grid-cols-2 gap-5">
                   {summary.stats.map((stat) => (
                     <div key={stat.label}>
@@ -365,6 +280,22 @@ export default function UsersPage() {
               ) : null}
             </DashboardMetricCard>
           ))}
+          <article className="ui-card dashboard-interactive flex min-h-[150px] flex-col justify-between rounded-[12px] p-4">
+            <div className="flex items-start justify-between gap-3">
+              <h2 className="text-[11px] font-normal leading-4 text-[#475569]">Reported Users</h2>
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[7px] bg-[#fff1f2] text-[#ef202b]">
+                <AlertTriangle size={14} fill="currentColor" stroke="white" strokeWidth={1.8} aria-hidden="true" />
+              </span>
+            </div>
+            <div className="flex items-end justify-between gap-2">
+              {isStatsLoading ? (
+                <div role="status" aria-label="Loading reported users" className="h-8 w-16 animate-pulse rounded bg-slate-200" />
+              ) : (
+                <p className="text-[26px] font-bold leading-8 text-[#111827]">{formatUserStat(userStats?.reported_users)}</p>
+              )}
+              <span className="mb-0.5 inline-flex items-center whitespace-nowrap text-[10px] font-medium leading-4 text-[#ff1744]">Requires Review<ChevronRight size={12} aria-hidden="true" /></span>
+            </div>
+          </article>
         </section>
 
         <DashboardPanel className="relative overflow-visible">
@@ -383,7 +314,7 @@ export default function UsersPage() {
                   <th className="w-[21%] px-5 text-[11px]">Email</th>
                   <th className="w-[13%] px-5 text-[11px]">Role</th>
                   <th className="w-[14%] px-5 text-[11px]">Last Interaction</th>
-                  <th className="w-[16%] px-5 text-right text-[11px]">Action</th>
+                  <th className="w-[16%] px-5 text-center text-[11px]">Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -413,13 +344,14 @@ export default function UsersPage() {
                       <td className="px-5 text-center text-[13px] text-[#64748b]">
                         {user.lastInteraction}
                       </td>
-                      <td className="px-5 text-right">
+                      <td className="px-5 text-center align-middle">
                         <Link
                           href={`/users/${user.id.replace('#', '')}`}
-                          className={cn(dashboardButtonClass('outline', 'sm'), 'border-[#c9d0e8] text-[#1B3061] hover:bg-[#f3f6ff]')}
+                          aria-label={`View profile for ${user.name}`}
+                          title="View Profile"
+                          className="ui-icon-button mx-auto h-7 w-7 text-[#1B3061] hover:bg-[#f3f6ff]"
                         >
-                          <Eye size={14} strokeWidth={2.1} />
-                          View Profile
+                          <Eye size={14} strokeWidth={2.1} aria-hidden="true" />
                         </Link>
                       </td>
                     </tr>
@@ -434,7 +366,7 @@ export default function UsersPage() {
                       <span className={`status-badge ${roleStyles['N/A']}`}>N/A</span>
                     </td>
                     <td className="px-5 text-center text-[13px] text-[#64748b]">N/A</td>
-                    <td className="px-5 text-right text-[13px] text-[#64748b]">N/A</td>
+                    <td className="px-5 text-center text-[13px] text-[#64748b]">N/A</td>
                   </tr>
                 )}
               </tbody>

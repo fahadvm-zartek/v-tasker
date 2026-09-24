@@ -5,6 +5,8 @@ const CATEGORY_API_PATHS = {
   categoryDetail: (id) => `/api/categories/${encodeURIComponent(String(id))}/`,
   subcategories: '/api/subcategories/',
   subcategoryDetail: (id) => `/api/subcategories/${encodeURIComponent(String(id))}/`,
+  checklistDefinitions: '/api/checklist-definitions/',
+  categoryKeywords: '/api/category-keywords/',
 };
 
 const EMPTY_VALUE = 'N/A';
@@ -43,7 +45,7 @@ const normalizeKeyword = (keyword) => {
 
 const normalizeChecklistQuestion = (question, index = 0) => ({
   id: String(pickFirst(question?.id, question?.uuid, `question-${index + 1}`)),
-  question: String(pickFirst(question?.question, question?.label, question?.name, question?.field_name, EMPTY_VALUE)),
+  question: String(pickFirst(question?.question, question?.screen_title, question?.label, question?.name, question?.field_name, EMPTY_VALUE)),
   type: String(pickFirst(question?.type, question?.question_type, question?.field_type, 'text')),
   required: Boolean(pickFirst(question?.required, question?.is_required, false)),
   options: extractCollection(question, ['options', 'choices']).map(normalizeKeyword),
@@ -52,13 +54,15 @@ const normalizeChecklistQuestion = (question, index = 0) => ({
 
 const normalizeSubcategory = (subcategory, index = 0) => ({
   id: String(pickFirst(subcategory?.id, subcategory?.uuid, `subcategory-${index + 1}`)),
-  categoryId: String(pickFirst(subcategory?.category, subcategory?.category_id, subcategory?.parent, EMPTY_VALUE)),
+  categoryId: String(pickFirst(subcategory?.category, subcategory?.subcategory, subcategory?.category_id, subcategory?.parent, EMPTY_VALUE)),
   name: String(pickFirst(subcategory?.name, subcategory?.title, EMPTY_VALUE)),
   description: String(pickFirst(subcategory?.description, '')),
   slug: String(pickFirst(subcategory?.slug, '')),
+  icon: subcategory?.icon ? String(subcategory.icon) : null,
   isActive: Boolean(pickFirst(subcategory?.is_active, subcategory?.active, true)),
   order: Number(pickFirst(subcategory?.order, subcategory?.sort_order, index + 1)),
-  keywords: extractCollection(subcategory, ['keywords', 'keyword_list', 'tags']).map(normalizeKeyword),
+  keywords: extractCollection(subcategory, ['keywords', 'keyword_list', 'tags'])
+    .filter((keyword) => keyword?.is_active !== false).map(normalizeKeyword),
   checklist: extractCollection(subcategory, ['checklist', 'questions', 'checklist_questions', 'items']).map(normalizeChecklistQuestion),
   raw: subcategory,
 });
@@ -71,18 +75,25 @@ const normalizeCategoryType = (categoryType) => {
   return 'IN_PERSON';
 };
 
-const normalizeCategory = (category, index = 0) => ({
-  id: String(pickFirst(category?.id, category?.uuid, `category-${index + 1}`)),
-  name: String(pickFirst(category?.name, category?.title, EMPTY_VALUE)),
-  description: String(pickFirst(category?.description, '')),
-  slug: String(pickFirst(category?.slug, '')),
-  categoryType: normalizeCategoryType(pickFirst(category?.category_type, category?.type, category?.service_type, category?.categoryType)),
-  isActive: Boolean(pickFirst(category?.is_active, category?.active, true)),
-  order: Number(pickFirst(category?.order, category?.sort_order, index + 1)),
-  keywords: extractCollection(category, ['keywords', 'keyword_list', 'tags']).map(normalizeKeyword),
-  subcategories: extractCollection(category, ['subcategories', 'sub_categories', 'children']).map(normalizeSubcategory),
-  raw: category,
-});
+const normalizeCategory = (category, index = 0) => {
+  const name = String(pickFirst(category?.name, category?.title, EMPTY_VALUE));
+  const categoryType = normalizeCategoryType(
+    pickFirst(category?.category_type, category?.type, category?.service_type, category?.categoryType, name, category?.slug),
+  );
+
+  return {
+    id: String(pickFirst(category?.id, category?.uuid, `category-${index + 1}`)),
+    name,
+    description: String(pickFirst(category?.description, '')),
+    slug: String(pickFirst(category?.slug, '')),
+    categoryType,
+    isActive: Boolean(pickFirst(category?.is_active, category?.active, true)),
+    order: Number(pickFirst(category?.order, category?.sort_order, index + 1)),
+    keywords: extractCollection(category, ['keywords', 'keyword_list', 'tags']).map(normalizeKeyword),
+    subcategories: extractCollection(category, ['subcategories', 'sub_categories', 'children']).map(normalizeSubcategory),
+    raw: category,
+  };
+};
 
 const normalizeCategoriesPage = (payload) => {
   const rawCategories = extractCollection(payload, ['value', 'results', 'data', 'categories']);
@@ -107,9 +118,12 @@ const buildSubcategoryPayload = (subcategory) => ({
   category: subcategory.categoryId,
   name: String(subcategory.name || '').trim(),
   description: String(subcategory.description || '').trim(),
+  ...(subcategory.icon !== undefined ? { icon: subcategory.icon ? String(subcategory.icon).trim() : null } : {}),
   is_active: subcategory.isActive ?? true,
-  keywords: (subcategory.keywords || []).map((keyword) => String(keyword).trim()).filter(Boolean),
-  checklist_questions: (subcategory.checklist || []).map(buildQuestionPayload),
+  ...(subcategory.keywords !== undefined ? {
+    keywords: subcategory.keywords.map((keyword) => String(keyword).trim()).filter(Boolean),
+  } : {}),
+  ...(subcategory.checklist !== undefined ? { checklist_questions: subcategory.checklist.map(buildQuestionPayload) } : {}),
 });
 
 const buildCategoryPayload = (category) => {
@@ -223,10 +237,17 @@ const updateCategory = async (id, category, options = {}) => {
 
 const createSubcategory = async (subcategory, options = {}) => {
   const { baseUrl, ...requestOptions } = options;
+  const requestPayload = buildSubcategoryPayload(subcategory);
+  requestPayload.slug = String(requestPayload.name ?? '')
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
   const response = await requestJson(getSubcategoriesEndpoint(baseUrl), {
     ...requestOptions,
     method: 'POST',
-    body: JSON.stringify(buildSubcategoryPayload(subcategory)),
+    body: JSON.stringify(requestPayload),
   });
   const payload = await readJson(response, 'Create subcategory request failed.');
 
@@ -245,12 +266,89 @@ const updateSubcategory = async (id, subcategory, options = {}) => {
   return normalizeSubcategory(payload);
 };
 
+const deleteCategory = async (id, options = {}) => {
+  const { baseUrl, ...requestOptions } = options;
+  const response = await requestJson(getCategoryEndpoint(id, baseUrl), {
+    ...requestOptions,
+    method: 'DELETE',
+  });
+
+  if (!response.ok && response.status !== 204) {
+    await readJson(response, 'Delete category request failed.');
+  }
+
+  return true;
+};
+
+const fetchSubcategoryKeywords = async (subcategoryId, options = {}) => {
+  const { baseUrl, ...requestOptions } = options;
+  const endpoint = `${resolveApiBaseUrl(baseUrl)}${CATEGORY_API_PATHS.categoryKeywords}`;
+  let url = `${endpoint}?${new URLSearchParams({ subcategory: String(subcategoryId) })}`;
+  const records = [];
+  const visited = new Set();
+  while (url && !visited.has(url)) {
+    visited.add(url);
+    const response = await requestJson(url, { ...requestOptions, method: 'GET' });
+    const payload = await readJson(response, 'Failed to load keywords.');
+    records.push(...extractCollection(payload, ['results', 'keywords', 'data']));
+    if (!payload?.next) break;
+    const next = new URL(payload.next, endpoint);
+    if (next.origin !== new URL(endpoint).origin || next.pathname !== new URL(endpoint).pathname) throw new Error('Invalid keyword pagination URL.');
+    next.searchParams.set('subcategory', String(subcategoryId));
+    url = next.toString();
+  }
+  return records;
+};
+
+const saveSubcategoryKeywords = async (subcategoryId, keywords, options = {}) => {
+  const subcategory = Number(subcategoryId);
+  if (!String(subcategoryId).trim() || !Number.isInteger(subcategory) || subcategory <= 0) throw new Error('Select a valid service before saving keywords.');
+  const existing = await fetchSubcategoryKeywords(subcategoryId, options);
+  const desired = [...new Set(keywords.map((keyword) => keyword.trim()).filter(Boolean))];
+  const { baseUrl, ...requestOptions } = options;
+  const endpoint = `${resolveApiBaseUrl(baseUrl)}${CATEGORY_API_PATHS.categoryKeywords}`;
+  for (const keyword of desired) {
+    const record = existing.find((item) => item.keyword === keyword && item.is_active !== false)
+      || existing.find((item) => item.keyword === keyword);
+    if (record && record.is_active !== false) continue;
+    const response = await requestJson(record ? `${endpoint}${encodeURIComponent(record.id)}/` : endpoint, {
+      ...requestOptions,
+      method: record ? 'PATCH' : 'POST',
+      body: JSON.stringify({ subcategory, keyword, is_active: true }),
+    });
+    await readJson(response, 'Failed to save keyword.');
+  }
+  for (const record of existing) {
+    if (record.is_active === false || desired.includes(record.keyword)) continue;
+    const response = await requestJson(`${endpoint}${encodeURIComponent(record.id)}/`, { ...requestOptions, method: 'DELETE' });
+    if (!response.ok && response.status !== 204) await readJson(response, 'Failed to remove keyword.');
+  }
+};
+
+const deleteSubcategory = async (id, options = {}) => {
+  const { baseUrl, ...requestOptions } = options;
+  const response = await requestJson(getSubcategoryEndpoint(id, baseUrl), {
+    ...requestOptions,
+    method: 'DELETE',
+  });
+
+  if (!response.ok && response.status !== 204) {
+    await readJson(response, 'Delete subcategory request failed.');
+  }
+
+  return true;
+};
+
 module.exports = {
+  fetchSubcategoryKeywords,
+  saveSubcategoryKeywords,
   CATEGORY_API_PATHS,
   buildCategoryPayload,
   buildSubcategoryPayload,
   createCategory,
   createSubcategory,
+  deleteCategory,
+  deleteSubcategory,
   fetchCategoriesPage,
   fetchCategoryById,
   getCategoriesEndpoint,

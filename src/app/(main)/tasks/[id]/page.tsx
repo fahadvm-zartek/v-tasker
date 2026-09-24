@@ -3,7 +3,6 @@
 import { use, useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
 import {
   AlertTriangle,
   ArrowLeft,
@@ -27,7 +26,6 @@ import type { NormalizedOffer, NormalizedMessage } from '../../../../services/of
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
-type TaskDetailStatus = 'inProgress' | 'dispute' | 'cancelled';
 type TaskDetailTab = 'offers' | 'questions';
 type TimelineTone = 'done' | 'active' | 'danger' | 'pending';
 
@@ -50,6 +48,7 @@ type ProviderOffer = {
   otherFees: string;
   payout: string;
   state?: 'accepted' | 'dispute';
+  raw?: Record<string, unknown>;
 };
 
 type TaskQuestion = {
@@ -66,222 +65,6 @@ type TaskQuestion = {
     moderated?: boolean;
   };
 };
-
-// ─── Static Fallback Data (required by task-detail-page.test.mjs) ─────────────
-
-const defaultTimeline: TimelineItem[] = [
-  {
-    title: 'Task Posted',
-    time: 'Jun 12, 9:00 AM',
-    detail: 'Customer published the request.',
-    tone: 'done',
-  },
-  {
-    title: 'Offer Received',
-    time: 'Jun 12, 10:15 AM',
-    detail: '3 providers submitted bids.',
-    tone: 'done',
-  },
-  {
-    title: 'Provider Assigned',
-    time: 'Jun 12, 11:30 AM',
-    detail: 'Mike T. was selected.',
-    tone: 'done',
-  },
-  {
-    title: 'In Progress',
-    time: 'Today, 2:00 PM',
-    detail: 'Mike T. has started the cleaning session.',
-    tone: 'active',
-    note: 'Mike T. has started the cleaning session.',
-  },
-  {
-    title: 'Completed',
-    time: 'Pending',
-    detail: '',
-    tone: 'pending',
-  },
-];
-
-const disputeTimeline: TimelineItem[] = [
-  {
-    title: 'Task Posted',
-    time: 'Jun 12, 9:00 AM',
-    detail: 'Customer published the request.',
-    tone: 'done',
-  },
-  {
-    title: 'Offer Received',
-    time: 'Jun 12, 10:15 AM',
-    detail: '3 providers submitted bids.',
-    tone: 'done',
-  },
-  {
-    title: 'In Progress',
-    time: 'Pending',
-    detail: '',
-    tone: 'pending',
-  },
-  {
-    title: 'Completed',
-    time: 'Pending',
-    detail: '',
-    tone: 'pending',
-  },
-];
-
-const cancelledTimeline: TimelineItem[] = [
-  {
-    title: 'Task Posted',
-    time: 'Jun 12, 9:00 AM',
-    detail: 'Customer published the request.',
-    tone: 'done',
-  },
-  {
-    title: 'Offer Received',
-    time: 'Jun 12, 10:15 AM',
-    detail: '3 providers submitted bids.',
-    tone: 'done',
-  },
-  {
-    title: 'Cancelled',
-    time: 'Jun 13, 2:50 PM',
-    detail: '',
-    tone: 'danger',
-  },
-];
-
-const taskStatusConfig: Record<TaskDetailStatus, {
-  label: string;
-  badgeClassName: string;
-  dotClassName: string;
-  timeline: TimelineItem[];
-  showViewerCount: boolean;
-}> = {
-  inProgress: {
-    label: 'In Progress',
-    badgeClassName: 'bg-[#dbeafe] text-[#2563eb]',
-    dotClassName: 'bg-[#2563eb]',
-    timeline: defaultTimeline,
-    showViewerCount: true,
-  },
-  dispute: {
-    label: 'Open / In Dispute',
-    badgeClassName: 'border border-[#fecaca] bg-[#fee2e2] text-[#dc2626]',
-    dotClassName: 'bg-[#dc2626]',
-    timeline: disputeTimeline,
-    showViewerCount: false,
-  },
-  cancelled: {
-    label: 'Cancelled',
-    badgeClassName: 'bg-[#fee2e2] text-[#dc2626]',
-    dotClassName: 'bg-[#dc2626]',
-    timeline: cancelledTimeline,
-    showViewerCount: false,
-  },
-};
-
-const getTaskDetailStatus = (id: string, statusParam?: string | null): TaskDetailStatus => {
-  const requestedStatus = statusParam?.toLowerCase() ?? '';
-
-  if (requestedStatus.includes('dispute')) {
-    return 'dispute';
-  }
-
-  if (requestedStatus.includes('cancelled')) {
-    return 'cancelled';
-  }
-
-  const normalizedId = decodeURIComponent(id).replace(/^#/, '');
-
-  if (normalizedId === 'TSK-4423') {
-    return 'dispute';
-  }
-
-  if (normalizedId === 'TSK-4424') {
-    return 'cancelled';
-  }
-
-  return 'inProgress';
-};
-
-// Static offers retained for test assertions — overridden by live data post-load
-const providerOffers: ProviderOffer[] = [
-  {
-    name: 'Mike T.',
-    slug: 'mike-t',
-    initials: 'MT',
-    rating: '4.9 (124)',
-    bid: '$120',
-    serviceAmount: '$100.00',
-    commission: '-$10.00',
-    otherFees: '-$5.00',
-    payout: '$105.00',
-    state: 'accepted',
-  },
-  {
-    name: 'Sarah J.',
-    slug: 'sarah-j',
-    initials: 'SJ',
-    rating: '4.7 (89)',
-    bid: '$135',
-    serviceAmount: '$112.50',
-    commission: '-$13.50',
-    otherFees: '-$9.00',
-    payout: '$112.50',
-  },
-  {
-    name: 'John D.',
-    slug: 'john-d',
-    initials: 'JD',
-    rating: '4.5 (42)',
-    bid: '$110',
-    serviceAmount: '$91.67',
-    commission: '-$11.00',
-    otherFees: '-$7.33',
-    payout: '$91.67',
-  },
-];
-
-// Static questions retained for test assertions — overridden by live data post-load
-const taskQuestions: TaskQuestion[] = [
-  {
-    author: 'Samantha Taylor',
-    initials: 'ST',
-    question: 'Do you have green waste bins on site, or do I need to take the cuttings with me to the tip?',
-    timestamp: '2 HOURS AGO',
-    likes: 1,
-    reply: {
-      author: 'Marcus G.',
-      initials: 'MG',
-      text: "I have one green bin, but if there's a lot of waste, you might need to take the overflow. Happy to adjust the budget if you need to tip it. Also i can pay directly !",
-      timestamp: '1 HOUR AGO',
-      moderated: true,
-    },
-  },
-  {
-    author: 'Maria Rivera',
-    initials: 'MR',
-    question: 'Is there parking available for a large van, or should I plan for street parking?',
-    timestamp: '30 MINS AGO',
-  },
-  {
-    author: 'David Lawson',
-    initials: 'DL',
-    question: "Are the hedges taller than 3 meters? Just checking if I'll need my extension ladder.",
-    timestamp: '4 HOURS AGO',
-  },
-];
-
-// ─── Helper: map live API status to TaskDetailStatus ─────────────────────────
-
-const mapApiStatusToDetailStatus = (apiStatus: string): TaskDetailStatus => {
-  const s = String(apiStatus).toUpperCase();
-  if (s === 'CANCELLED' || s === 'EXPIRED') return 'cancelled';
-  return 'inProgress';
-};
-
-// ─── UI Sub-components ────────────────────────────────────────────────────────
 
 const TimelineMarker = ({ tone }: { tone: TimelineTone }) => {
   if (tone === 'done') {
@@ -341,26 +124,26 @@ const DeleteTaskConfirmationModal = ({
       aria-labelledby="delete-task-title"
       className="w-full max-w-[630px] overflow-hidden rounded-[12px] bg-white shadow-[0_24px_70px_rgba(15,23,42,0.24)]"
     >
-      <div className="flex gap-6 px-9 pb-7 pt-8">
-        <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[14px] bg-[#fee2e2] text-[#dc2626]">
-          <AlertTriangle size={30} strokeWidth={2.1} />
+      <div className="flex gap-3 p-5">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-[#fee2e2] text-[#dc2626]">
+          <AlertTriangle size={20} strokeWidth={2.1} />
         </span>
         <div className="min-w-0">
-          <h2 id="delete-task-title" className="text-[26px] font-bold leading-8 text-[#111827]">
+          <h2 id="delete-task-title" className="text-[18px] font-bold leading-6 text-[#111827]">
             Delete Task
           </h2>
-          <p className="mt-4 max-w-[460px] text-[22px] font-medium leading-8 text-[#374151]">
+          <p className="mt-3 max-w-[460px] text-[12px] font-medium leading-5 text-[#374151]">
             Are you sure you want to delete Task {displayId}? This action cannot be undone and all associated offers and discussions will be permanently removed.
           </p>
         </div>
       </div>
 
-      <footer className="flex items-center justify-end gap-7 bg-[#f5f7fb] px-9 py-6">
+      <footer className="flex items-center justify-end gap-3 bg-[#f5f7fb] px-5 py-4">
         <button
           type="button"
           onClick={onClose}
           disabled={isDeleting}
-          className="inline-flex h-12 items-center justify-center rounded-[6px] px-5 text-[16px] font-bold text-[#374151] transition-colors hover:bg-white disabled:opacity-50"
+          className="inline-flex h-9 items-center justify-center rounded-[6px] px-4 text-[12px] font-bold text-[#374151] transition-colors hover:bg-white disabled:opacity-50"
         >
           Cancel
         </button>
@@ -368,9 +151,9 @@ const DeleteTaskConfirmationModal = ({
           type="button"
           onClick={onConfirm}
           disabled={isDeleting}
-          className="inline-flex h-12 items-center justify-center gap-3 rounded-[6px] bg-[#dc2626] px-7 text-[16px] font-bold text-white shadow-[0_10px_22px_rgba(220,38,38,0.18)] transition-colors hover:bg-[#b91c1c] disabled:opacity-50"
+          className="inline-flex h-9 items-center justify-center gap-2 rounded-[6px] bg-[#dc2626] px-4 text-[12px] font-bold text-white shadow-[0_10px_22px_rgba(220,38,38,0.18)] transition-colors hover:bg-[#b91c1c] disabled:opacity-50"
         >
-          {isDeleting ? <Loader2 size={18} className="animate-spin" /> : <Trash2 size={18} strokeWidth={2.2} />}
+          {isDeleting ? <Loader2 size={15} className="animate-spin" /> : <Trash2 size={15} strokeWidth={2.2} />}
           Delete Permanently
         </button>
       </footer>
@@ -379,11 +162,15 @@ const DeleteTaskConfirmationModal = ({
 );
 
 const FeeAdjustmentReviewModal = ({
+  offer,
+  service,
   displayId,
   onClose,
   onApprove,
   isApproving,
 }: {
+  offer: ProviderOffer | null;
+  service: string;
   displayId: string;
   onClose: () => void;
   onApprove: () => void;
@@ -418,13 +205,13 @@ const FeeAdjustmentReviewModal = ({
           </div>
           <div>
             <p className="text-[13px] font-medium uppercase tracking-[0.18em] text-[#64748b]">Service</p>
-            <p className="mt-2 text-[18px] font-medium leading-6 text-[#111827]">House Cleaning &mdash; 3BR</p>
+            <p className="mt-2 text-[18px] font-medium leading-6 text-[#111827]">{service || 'N/A'}</p>
           </div>
           <div>
             <p className="text-[13px] font-medium uppercase tracking-[0.18em] text-[#64748b]">Provider</p>
             <div className="mt-2 flex items-center gap-3">
-              <ProviderAvatar initials="MT" />
-              <p className="text-[18px] font-bold text-[#111827]">Mike T.</p>
+              <ProviderAvatar initials={offer?.initials || 'NA'} />
+              <p className="text-[18px] font-bold text-[#111827]">{offer?.name || 'N/A'}</p>
             </div>
           </div>
         </div>
@@ -435,7 +222,7 @@ const FeeAdjustmentReviewModal = ({
             Adjustment Reason
           </p>
           <p className="mt-3 text-[18px] font-medium italic leading-7 text-[#1f2937]">
-            &quot;Encountered unexpected mold in the primary bathroom requiring specialized cleaning solutions and an additional 45 minutes of labor.&quot;
+            {displayApiValue((offer?.raw?.fee_adjustment as Record<string, unknown> | undefined)?.reason, 'No adjustment reason provided.')}
           </p>
         </div>
 
@@ -449,15 +236,15 @@ const FeeAdjustmentReviewModal = ({
               <dl className="space-y-4 py-5 text-[17px]">
                 <div className="flex justify-between gap-4">
                   <dt className="text-[#64748b]">Service Amount</dt>
-                  <dd className="font-medium text-[#334155]">$100.00</dd>
+                  <dd className="font-medium text-[#334155]">{offer?.serviceAmount || 'N/A'}</dd>
                 </div>
                 <div className="flex justify-between gap-4 border-b border-dashed border-[#dbe4ef] pb-4">
-                  <dt className="text-[#64748b]">Commission (10%)</dt>
-                  <dd className="font-medium text-[#64748b]">-$10.00</dd>
+                  <dt className="text-[#64748b]">Commission</dt>
+                  <dd className="font-medium text-[#64748b]">{offer?.commission || 'N/A'}</dd>
                 </div>
                 <div className="flex justify-between gap-4">
                   <dt className="font-medium text-[#111827]">Provider Payout</dt>
-                  <dd className="font-medium text-[#111827]">$90.00</dd>
+                  <dd className="font-medium text-[#111827]">{offer?.payout || 'N/A'}</dd>
                 </div>
               </dl>
             </section>
@@ -468,21 +255,21 @@ const FeeAdjustmentReviewModal = ({
                   Requested Payment Increase
                 </h4>
                 <span className="rounded-full bg-[#dbeafe] px-5 py-2 text-[13px] font-medium text-[#2563eb]">
-                  + $15.00
+                  {displayApiValue((offer?.raw?.fee_adjustment as Record<string, unknown> | undefined)?.amount)}
                 </span>
               </div>
               <dl className="space-y-4 py-5 text-[17px]">
                 <div className="flex justify-between gap-4">
                   <dt className="font-medium text-[#111827]">Service Amount</dt>
-                  <dd className="font-bold text-[#111827]">$115.00</dd>
+                  <dd className="font-bold text-[#111827]">{displayApiValue((offer?.raw?.fee_adjustment as Record<string, unknown> | undefined)?.service_amount)}</dd>
                 </div>
                 <div className="flex justify-between gap-4 border-b border-dashed border-[#dbe4ef] pb-4">
-                  <dt className="text-[#64748b]">Commission (10%)</dt>
-                  <dd className="font-medium text-[#64748b]">-$11.50</dd>
+                  <dt className="text-[#64748b]">Commission</dt>
+                  <dd className="font-medium text-[#64748b]">{displayApiValue((offer?.raw?.fee_adjustment as Record<string, unknown> | undefined)?.commission)}</dd>
                 </div>
                 <div className="flex justify-between gap-4">
                   <dt className="font-bold text-[#3b82f6]">Provider Payout</dt>
-                  <dd className="font-bold text-[#3b82f6]">$103.50</dd>
+                  <dd className="font-bold text-[#3b82f6]">{displayApiValue((offer?.raw?.fee_adjustment as Record<string, unknown> | undefined)?.payout)}</dd>
                 </div>
               </dl>
             </section>
@@ -555,7 +342,7 @@ const ProviderOfferCard = ({
         <dd className="font-medium text-[#172033]">{offer.serviceAmount}</dd>
       </div>
       <div className="flex justify-between gap-3">
-        <dt className="text-[#64748b]">Commission (10%):</dt>
+        <dt className="text-[#64748b]">Commission:</dt>
         <dd className="font-medium text-[#ef4444]">{offer.commission}</dd>
       </div>
       <div className="flex justify-between gap-3">
@@ -568,7 +355,7 @@ const ProviderOfferCard = ({
       </div>
     </dl>
 
-    {offer.state === 'accepted' ? (
+    {offer.raw?.fee_adjustment && typeof offer.raw.fee_adjustment === 'object' ? (
       <div className="mt-3 flex items-center justify-between rounded-[4px] border border-[#facc15] bg-[#fef9c3] px-2 py-1.5 text-[9px] font-bold text-[#b45309]">
         <span>Fee Adj. Requested</span>
         <button
@@ -632,7 +419,7 @@ const QuestionsSection = ({ questions }: { questions: TaskQuestion[] }) => (
                   <button type="button" className="transition-colors hover:text-[#2563eb]">
                     REPLY
                   </button>
-                  {item.likes ? <span>1</span> : null}
+                  {item.likes ? <span>{item.likes}</span> : null}
                 </div>
 
                 {item.reply ? (
@@ -686,19 +473,19 @@ const DisputeDetails = ({
     <div className="flex items-center justify-between gap-3">
       <p className="flex items-center gap-2 text-[12px] font-bold text-[#dc2626]">
         <AlertTriangle size={15} strokeWidth={2.2} />
-        Dispute {disputeId ?? '#DIS-5022'}
+        Dispute {disputeId || 'N/A'}
       </p>
       <span className="rounded-full border border-[#fca5a5] bg-[#fee2e2] px-2 py-0.5 text-[9px] font-bold uppercase text-[#dc2626]">
-        {status ?? 'REVIEWING'}
+        {status || 'N/A'}
       </span>
     </div>
     <h4 className="mt-5 text-[11px] font-bold text-[#334155]">Reason for Dispute</h4>
     <p className="mt-2 text-[12px] font-medium leading-5 text-[#334155]">
-      {reason ?? 'Provider reported a mismatch between the task description and the actual requirements upon arrival. Mike T. claims the 3BR cleaning requires significantly more time than estimated.'}
+      {reason || 'No reason provided.'}
     </p>
     <div className="mt-4 grid grid-cols-[92px_minmax(0,1fr)] gap-2 border-t border-[#fecaca] pt-4 text-[11px] font-medium text-[#475569]">
       <span className="font-bold text-[#334155]">Date Raised</span>
-      <span>{dateRaised ?? 'June 13, 2023 at 10:45 AM'}</span>
+      <span>{dateRaised || 'N/A'}</span>
     </div>
     <button
       type="button"
@@ -727,11 +514,11 @@ const CancellationDetails = ({
     </p>
     <h4 className="mt-5 text-[11px] font-bold text-[#dc2626]">Reason</h4>
     <p className="mt-2 text-[12px] font-medium leading-5 text-[#7f1d1d]">
-      {reason ?? 'Customer requested cancellation due to unexpected severe scheduling conflict. Provider agreed to terms.'}
+      {reason || 'No cancellation reason provided.'}
     </p>
     <div className="mt-4 grid grid-cols-[92px_minmax(0,1fr)] gap-2 border-t border-[#fecaca] pt-4 text-[11px] font-medium text-[#7f1d1d]">
       <span className="font-bold text-[#991b1b]">Date Cancelled</span>
-      <span>{dateCancelled ?? 'Jun 13, 2023 at 2:30 PM'}</span>
+      <span>{dateCancelled || 'N/A'}</span>
     </div>
   </div>
 );
@@ -789,39 +576,18 @@ const Toast = ({ message, type, onClose }: { message: string; type: 'success' | 
 // ─── Section loading state ────────────────────────────────────────────────────
 
 const SectionLoader = () => (
-  <div className="flex items-center justify-center py-10">
-    <Loader2 size={24} className="animate-spin text-[#2563eb]" />
+  <div role="status" aria-busy="true" className="space-y-3 py-6">
+    <span className="sr-only">Loading task details</span>
+    <div aria-hidden="true" className="animate-pulse space-y-3">
+      <div className="h-4 w-2/3 rounded bg-slate-200" />
+      <div className="h-4 w-full rounded bg-slate-200" />
+      <div className="h-4 w-1/2 rounded bg-slate-200" />
+    </div>
   </div>
 );
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
-
-const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-const formatDateCreated = (dateValue: string | undefined | null) => {
-  const original = String(dateValue ?? '').trim();
-  if (!original || original === 'N/A') return 'N/A';
-
-  const match = original.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (match) {
-    const [, year, monthStr, dayStr] = match;
-    const monthIndex = parseInt(monthStr, 10) - 1;
-    const day = parseInt(dayStr, 10);
-    if (monthIndex >= 0 && monthIndex < 12 && !isNaN(day)) {
-      return `${day} ${MONTH_NAMES[monthIndex]} ${year}`;
-    }
-  }
-
-  const parsed = new Date(original.replace(' ', 'T'));
-  if (!isNaN(parsed.getTime())) {
-    const day = parsed.getDate();
-    const month = MONTH_NAMES[parsed.getMonth()];
-    const year = parsed.getFullYear();
-    return `${day} ${month} ${year}`;
-  }
-
-  return original;
-};
+const displayApiValue = (value: unknown, empty = 'N/A'): string =>
+  typeof value === 'string' && value.trim() ? value : typeof value === 'number' && Number.isFinite(value) ? String(value) : empty;
 
 const getStatusCapsuleClass = (status: string): string => {
   const normalized = String(status ?? '').toLowerCase().replace(/[\s_-]+/g, '');
@@ -848,54 +614,8 @@ const formatTaskLocation = (task: TaskDetail | null): string => {
   return parts.join(', ');
 };
 
-const buildTimeline = (task: TaskDetail | null, dispute: unknown | null): TimelineItem[] => {
-  if (task?.statusTimeline && Array.isArray(task.statusTimeline) && task.statusTimeline.length > 0) {
-    return task.statusTimeline as TimelineItem[];
-  }
-
-  const dateStr = task?.dateCreated ? formatDateCreated(task.dateCreated) : 'N/A';
-  const statusNorm = String(task?.status ?? '').toLowerCase().replace(/[\s_-]+/g, '');
-
-  if (statusNorm === 'dispute' || statusNorm === 'disputed' || dispute) {
-    return [
-      { title: 'Task Posted', time: dateStr, detail: 'Customer published the request.', tone: 'done' },
-      { title: 'In Dispute', time: 'Under Review', detail: 'Dispute raised on this task.', tone: 'danger' },
-    ];
-  }
-
-  if (statusNorm === 'cancelled' || statusNorm === 'canceled') {
-    return [
-      { title: 'Task Posted', time: dateStr, detail: 'Customer published the request.', tone: 'done' },
-      { title: 'Cancelled', time: 'Cancelled', detail: 'Task was cancelled.', tone: 'danger' },
-    ];
-  }
-
-  if (statusNorm === 'completed') {
-    return [
-      { title: 'Task Posted', time: dateStr, detail: 'Customer published the request.', tone: 'done' },
-      { title: 'Provider Assigned', time: task?.doer?.name ?? 'Assigned', detail: 'Provider selected.', tone: 'done' },
-      { title: 'In Progress', time: 'Completed', detail: 'Work completed.', tone: 'done' },
-      { title: 'Completed', time: 'Completed', detail: 'Task completed.', tone: 'done' },
-    ];
-  }
-
-  if (statusNorm === 'inprogress' || statusNorm === 'assigned') {
-    return [
-      { title: 'Task Posted', time: dateStr, detail: 'Customer published the request.', tone: 'done' },
-      { title: 'Provider Assigned', time: task?.doer?.name ?? 'Assigned', detail: 'Provider selected.', tone: 'done' },
-      { title: 'In Progress', time: 'Active', detail: 'Task is in progress.', tone: 'active' },
-      { title: 'Completed', time: 'Pending', detail: '', tone: 'pending' },
-    ];
-  }
-
-  // Default / Open / Pending: Keep the first step active and show the next step as pending
-  return [
-    { title: 'Task Posted', time: dateStr, detail: 'Customer published the request.', tone: 'active' },
-    { title: 'Offer Received', time: 'Pending', detail: '', tone: 'pending' },
-    { title: 'In Progress', time: 'Pending', detail: '', tone: 'pending' },
-    { title: 'Completed', time: 'Pending', detail: '', tone: 'pending' },
-  ];
-};
+const buildTimeline = (task: TaskDetail | null): TimelineItem[] =>
+  Array.isArray(task?.statusTimeline) ? task.statusTimeline : [];
 
 export default function TaskDetailPage({
   params,
@@ -904,10 +624,10 @@ export default function TaskDetailPage({
 }) {
   const { id } = use(params);
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   // UI state
   const [isFeeAdjustmentOpen, setIsFeeAdjustmentOpen] = useState(false);
+  const [selectedOffer, setSelectedOffer] = useState<ProviderOffer | null>(null);
   const [isDeleteTaskOpen, setIsDeleteTaskOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<TaskDetailTab>('offers');
 
@@ -926,6 +646,10 @@ export default function TaskDetailPage({
   const [chatMessages, setChatMessages] = useState<NormalizedMessage[]>([]);
   const [liveDispute, setLiveDispute] = useState<{ id: string; reason: string; status: string; dateRaised: string } | null>(null);
   const [isLoadingTask, setIsLoadingTask] = useState(true);
+  const [loadedTaskId, setLoadedTaskId] = useState<string | null>(null);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(true);
+  const [isLoadingDispute, setIsLoadingDispute] = useState(true);
+  const [sectionErrors, setSectionErrors] = useState<Record<string, string>>({});
   const [isLoadingOffers, setIsLoadingOffers] = useState(true);
   const [isLoadingQuestions, setIsLoadingQuestions] = useState(true);
   const [apiError, setApiError] = useState<string | null>(null);
@@ -938,16 +662,9 @@ export default function TaskDetailPage({
 
   // Determine status from real API data
   const rawStatus = taskDetail?.status ?? '';
-  const urlStatusParam = searchParams.get('status');
-  const actualStatus = rawStatus || urlStatusParam || 'N/A';
-  const taskStatus: TaskDetailStatus = rawStatus
-    ? mapApiStatusToDetailStatus(rawStatus)
-    : getTaskDetailStatus(id, urlStatusParam);
-
-  const offersForStatus: ProviderOffer[] = (liveOffers ?? []).map((o, i) => ({
-    ...o,
-    state: i === 0 ? (o.status === 'ACCEPTED' ? 'accepted' : o.status === 'WITHDRAWN' ? 'dispute' : undefined) : undefined,
-  }));
+  const actualStatus = rawStatus || 'N/A';
+  const taskStatus = liveDispute ? 'dispute' : ['CANCELLED', 'CANCELED'].includes(rawStatus.toUpperCase()) ? 'cancelled' : '';
+  const offersForStatus: ProviderOffer[] = liveOffers ?? [];
 
   const displayQuestions: TaskQuestion[] = liveQuestions ?? [];
 
@@ -963,6 +680,18 @@ export default function TaskDetailPage({
     const taskId = decodeURIComponent(id).replace(/^#/, '');
 
     const loadAll = async () => {
+      setIsLoadingTask(true);
+      setTaskDetail(null);
+      setLiveOffers(null);
+      setLiveQuestions(null);
+      setChatMessages([]);
+      setLiveDispute(null);
+      setApiError(null);
+      setSectionErrors({});
+      setIsLoadingOffers(true);
+      setIsLoadingQuestions(true);
+      setIsLoadingMessages(true);
+      setIsLoadingDispute(true);
       const { fetchTaskById } = await import('../../../../services/taskService');
       const { fetchOffersByTask, fetchOfferMessages, normalizeOffer } = await import('../../../../services/offerService');
       const { fetchTaskQuestions } = await import('../../../../services/taskService');
@@ -978,10 +707,12 @@ export default function TaskDetailPage({
       } catch (err) {
         if (!cancelled) setApiError(err instanceof Error ? err.message : 'Failed to load task details');
       } finally {
-        if (!cancelled) setIsLoadingTask(false);
+        if (!cancelled) { setLoadedTaskId(id); setIsLoadingTask(false); }
       }
 
-      // Load offers in parallel
+      if (cancelled || !detail) return;
+
+      // Load offers
       setIsLoadingOffers(true);
       let offersData: NormalizedOffer[] = [];
       try {
@@ -996,7 +727,7 @@ export default function TaskDetailPage({
         }
         if (!cancelled) setLiveOffers(offersData);
       } catch {
-        if (!cancelled) setLiveOffers([]);
+        if (!cancelled) { setLiveOffers([]); setSectionErrors((errors) => ({ ...errors, offers: 'Unable to load offers.' })); }
       } finally {
         if (!cancelled) setIsLoadingOffers(false);
       }
@@ -1007,7 +738,7 @@ export default function TaskDetailPage({
         const questionsData = await fetchTaskQuestions(taskId);
         if (!cancelled) setLiveQuestions(questionsData);
       } catch {
-        if (!cancelled) setLiveQuestions([]);
+        if (!cancelled) { setLiveQuestions([]); setSectionErrors((errors) => ({ ...errors, questions: 'Unable to load questions.' })); }
       } finally {
         if (!cancelled) setIsLoadingQuestions(false);
       }
@@ -1025,7 +756,9 @@ export default function TaskDetailPage({
           });
         }
       } catch {
-        // Ignore dispute fetch errors
+        if (!cancelled) setSectionErrors((errors) => ({ ...errors, dispute: 'Unable to load dispute information.' }));
+      } finally {
+        if (!cancelled) setIsLoadingDispute(false);
       }
 
       // Load chat rooms and messages, with fallback to offer messages
@@ -1050,7 +783,7 @@ export default function TaskDetailPage({
 
         // If no chat room messages, fallback to offer messages (e.g. GET /api/offers/10/messages/)
         if (loadedMsgs.length === 0) {
-          const offerIdsToTry = [taskId, ...(offersData ?? []).map((o) => o.id)];
+          const offerIdsToTry = (offersData ?? []).map((o) => o.id);
           for (const offerIdCandidate of offerIdsToTry) {
             if (!offerIdCandidate) continue;
             try {
@@ -1069,11 +802,15 @@ export default function TaskDetailPage({
           setChatMessages(loadedMsgs);
         }
       } catch {
-        // Ignore chat fetch errors
+        if (!cancelled) setSectionErrors((errors) => ({ ...errors, messages: 'Unable to load discussion.' }));
+      } finally {
+        if (!cancelled) setIsLoadingMessages(false);
       }
     };
 
-    void loadAll();
+    void loadAll().catch(() => {
+      if (!cancelled) { setApiError('Unable to load task details.'); setLoadedTaskId(id); setIsLoadingTask(false); }
+    });
     return () => { cancelled = true; };
   }, [id]);
 
@@ -1130,11 +867,18 @@ export default function TaskDetailPage({
   const taskPosterLink = taskDetail?.poster?.id ? `/users/${taskDetail.poster.id}` : '#';
   const taskLocation = formatTaskLocation(taskDetail);
   const taskBudget = taskDetail?.budget || '';
-  const taskViewsDisplay = taskDetail?.viewsCount != null ? `${taskDetail.viewsCount} views` : '';
+  const taskViewsDisplay = taskDetail?.raw?.views_count != null || taskDetail?.raw?.views != null ? `${taskDetail.viewsCount} views` : '';
 
   const disputeDisplayed = liveDispute ?? null;
-  const timelineItems = buildTimeline(taskDetail, liveDispute);
+  const timelineItems = buildTimeline(taskDetail);
   const hasOffers = liveOffers && liveOffers.length > 0;
+
+  if (isLoadingTask || loadedTaskId !== id) {
+    return <DashboardPageShell contentClassName="px-3 pb-8 pt-5 sm:px-4"><SectionLoader /><div className="grid gap-5 xl:grid-cols-[370px_minmax(0,1fr)]"><DashboardPanel className="p-6"><SectionLoader /></DashboardPanel><DashboardPanel className="p-6"><SectionLoader /></DashboardPanel></div></DashboardPageShell>;
+  }
+  if (apiError || !taskDetail) {
+    return <DashboardPageShell contentClassName="px-3 pb-8 pt-5 sm:px-4"><DashboardPanel className="space-y-3 p-6"><p role="alert" className="text-[13px] font-medium text-[#64748b]">{apiError || 'No task details available.'}</p><Link href="/tasks" className="text-[12px] text-[#2563eb]">Back to tasks</Link></DashboardPanel></DashboardPageShell>;
+  }
 
   return (
     <DashboardPageShell contentClassName="px-3 pb-8 pt-5 sm:px-4">
@@ -1259,6 +1003,7 @@ export default function TaskDetailPage({
                 <SectionLoader />
               ) : (
                 <div className="mt-6 space-y-5 border-t border-[#edf1f6] pt-5">
+                  {timelineItems.length === 0 && <p className="text-[12px] font-medium text-[#64748b]">No timeline available.</p>}
                   {timelineItems.map((item, index) => (
                     <div key={item.title} className="relative flex gap-4">
                       {index < timelineItems.length - 1 ? (
@@ -1290,24 +1035,24 @@ export default function TaskDetailPage({
                   <h3 className="text-[11px] font-bold text-[#334155]">Completion Docs</h3>
                   <div className="mt-2 flex h-11 items-center justify-center gap-2 rounded-[6px] border border-dashed border-[#cbd5e1] bg-[#f8fafc] text-[11px] font-medium text-[#64748b]">
                     <Paperclip size={13} strokeWidth={2.1} />
-                    No documents uploaded yet.
+                    {Array.isArray(taskDetail.raw.completion_documents) && taskDetail.raw.completion_documents.length > 0 ? `${taskDetail.raw.completion_documents.length} completion documents available.` : 'No completion documents provided.'}
                   </div>
                 </div>
                 <div>
                   <h3 className="text-[11px] font-bold text-[#334155]">
                     {taskStatus === 'cancelled' ? 'Cancellation Details' : 'Dispute Info'}
                   </h3>
-                  {taskStatus === 'dispute' ? (
+                  {isLoadingDispute ? <SectionLoader /> : sectionErrors.dispute ? <p role="alert" className="text-[12px] text-[#64748b]">{sectionErrors.dispute}</p> : taskStatus === 'dispute' ? (
                     <DisputeDetails
                       disputeId={disputeDisplayed?.id ? (disputeDisplayed.id.startsWith('#') ? disputeDisplayed.id : `#${disputeDisplayed.id}`) : 'Dispute'}
                       reason={disputeDisplayed?.reason}
-                      status={disputeDisplayed?.status ?? 'REVIEWING'}
+                      status={disputeDisplayed?.status || 'N/A'}
                       dateRaised={disputeDisplayed?.dateRaised}
                       onResolve={handleResolveDispute}
                       isResolving={isResolvingDispute}
                     />
                   ) : taskStatus === 'cancelled' ? (
-                    <CancellationDetails displayId={displayId} />
+                    <CancellationDetails displayId={displayId} reason={displayApiValue(taskDetail.raw.cancellation_reason, '')} dateCancelled={displayApiValue(taskDetail.raw.cancelled_at, '')} />
                   ) : (
                     <div className="mt-2 rounded-[6px] border border-[#d4f5de] bg-[#ecfdf3] px-4 py-4 text-[12px] font-medium text-[#16a34a]">
                       No active disputes.
@@ -1325,7 +1070,7 @@ export default function TaskDetailPage({
               </h2>
               {isLoadingOffers ? (
                 <SectionLoader />
-              ) : offersForStatus.length === 0 ? (
+              ) : sectionErrors.offers ? <p role="alert" className="py-6 text-[12px] text-[#64748b]">{sectionErrors.offers}</p> : offersForStatus.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-10 text-[#64748b]">
                   <p className="text-[13px] font-medium">No offers submitted yet.</p>
                 </div>
@@ -1336,7 +1081,7 @@ export default function TaskDetailPage({
                       key={offer.name + offer.slug}
                       offer={offer}
                       taskId={normalizedId}
-                      onReviewFeeAdjustment={() => setIsFeeAdjustmentOpen(true)}
+                      onReviewFeeAdjustment={() => { setSelectedOffer(offer); setIsFeeAdjustmentOpen(true); }}
                     />
                   ))}
                 </div>
@@ -1365,7 +1110,7 @@ export default function TaskDetailPage({
               ) : null}
 
               <div className="min-h-[220px] px-6 py-8">
-                {!hasOffers ? (
+                {isLoadingOffers || isLoadingMessages ? <SectionLoader /> : sectionErrors.messages ? <p role="alert" className="text-[12px] text-[#64748b]">{sectionErrors.messages}</p> : !hasOffers ? (
                   <div className="flex flex-col items-center justify-center py-10 text-center text-[#64748b]">
                     <MessageCircle size={32} className="mb-2 text-[#94a3b8]" />
                     <p className="text-[14px] font-medium">No Offer Discussion available.</p>
@@ -1377,9 +1122,6 @@ export default function TaskDetailPage({
                   </div>
                 ) : (
                   <>
-                    <div className="mb-8 text-center">
-                      <span className="rounded-full bg-[#eef2f6] px-3 py-1 text-[11px] font-medium text-[#94a3b8]">Today</span>
-                    </div>
                     {chatMessages.map((msg, i) => (
                       <ChatMessage key={msg.id} message={msg} isRight={i % 2 === 1} />
                     ))}
@@ -1411,13 +1153,15 @@ export default function TaskDetailPage({
               <SectionLoader />
             </DashboardPanel>
           ) : (
-            <QuestionsSection questions={displayQuestions} />
+            sectionErrors.questions ? <p role="alert" className="text-[12px] text-[#64748b]">{sectionErrors.questions}</p> : <QuestionsSection questions={displayQuestions} />
           )
         ) : null}
       </div>
 
       {isFeeAdjustmentOpen ? (
         <FeeAdjustmentReviewModal
+          offer={selectedOffer}
+          service={taskDetail.subcategory || taskDetail.category}
           displayId={displayId}
           onClose={() => setIsFeeAdjustmentOpen(false)}
           onApprove={handleApproveAdjustment}

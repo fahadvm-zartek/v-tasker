@@ -2,6 +2,7 @@ import type { AuthRequestOptions } from './authService';
 
 export type ChecklistQuestion = {
   id: string;
+  componentNumber?: string;
   question: string;
   type: string;
   required: boolean;
@@ -15,6 +16,7 @@ export type ServiceSubcategory = {
   name: string;
   description: string;
   slug: string;
+  icon?: string | null;
   isActive: boolean;
   order: number;
   keywords: string[];
@@ -44,6 +46,7 @@ export type SubcategoryPayload = {
   categoryId: string;
   name: string;
   description?: string;
+  icon?: string | null;
   isActive?: boolean;
   keywords?: string[];
   checklist?: ChecklistQuestion[];
@@ -66,6 +69,8 @@ export const CATEGORY_API_PATHS: {
   categoryDetail: (id: string) => string;
   subcategories: string;
   subcategoryDetail: (id: string) => string;
+  checklistDefinitions: string;
+  categoryKeywords: string;
 };
 
 export function getCategoriesEndpoint(baseUrl?: string): string;
@@ -83,13 +88,22 @@ export function createCategory(category: CategoryPayload, options?: CategoryRequ
 export function createSubcategory(subcategory: SubcategoryPayload, options?: CategoryRequestOptions): Promise<ServiceSubcategory>;
 export function updateCategory(id: string, category: CategoryPayload, options?: CategoryRequestOptions): Promise<ServiceCategory>;
 export function updateSubcategory(id: string, subcategory: SubcategoryPayload, options?: CategoryRequestOptions): Promise<ServiceSubcategory>;
+export function deleteCategory(id: string, options?: CategoryRequestOptions): Promise<boolean>;
+export function deleteSubcategory(id: string, options?: CategoryRequestOptions): Promise<boolean>;
+export type ServiceKeyword = { id: number | string; subcategory: number; keyword: string; is_active: boolean };
+export function fetchSubcategoryKeywords(subcategoryId: string, options?: CategoryRequestOptions): Promise<ServiceKeyword[]>;
+export function saveSubcategoryKeywords(subcategoryId: string, keywords: string[], options?: CategoryRequestOptions): Promise<void>;
 
 declare const categoryService: {
+  fetchSubcategoryKeywords: typeof fetchSubcategoryKeywords;
+  saveSubcategoryKeywords: typeof saveSubcategoryKeywords;
   CATEGORY_API_PATHS: typeof CATEGORY_API_PATHS;
   buildCategoryPayload: typeof buildCategoryPayload;
   buildSubcategoryPayload: typeof buildSubcategoryPayload;
   createCategory: typeof createCategory;
   createSubcategory: typeof createSubcategory;
+  deleteCategory: typeof deleteCategory;
+  deleteSubcategory: typeof deleteSubcategory;
   fetchCategoriesPage: typeof fetchCategoriesPage;
   fetchCategoryById: typeof fetchCategoryById;
   getCategoriesEndpoint: typeof getCategoriesEndpoint;
@@ -104,3 +118,4 @@ declare const categoryService: {
 };
 
 export default categoryService;
+

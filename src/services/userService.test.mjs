@@ -3,6 +3,17 @@ import test from 'node:test';
 
 import userService from './userService.js';
 
+test('last interaction uses the API interaction timestamp and formats its calendar date', () => {
+  for (const [value, expected] of [
+    ['2026-09-24 15:31:31', 'Sep 24, 2026'],
+    ['2024-12-01T23:30:00-05:00', 'Dec 01, 2024'],
+    [null, 'N/A'], ['', 'N/A'], ['invalid', 'N/A'], ['2026-02-30 12:00:00', 'N/A'],
+  ]) {
+    const user = userService.normalizeUserSummary({ id: 1, last_interaction_at: value, updated_at: '2025-01-01', last_login: '2025-01-01' });
+    assert.equal(user.lastInteraction, expected);
+  }
+});
+
 test('user service builds the users list and detail endpoints', () => {
   assert.equal(userService.getUsersEndpoint('https://api.example.com/'), 'https://api.example.com/api/users');
   assert.equal(userService.getUserEndpoint('CUS-0041', 'https://api.example.com/'), 'https://api.example.com/api/users/CUS-0041');
@@ -216,6 +227,6 @@ test('fetchUserById normalizes the current backend user detail response shape', 
   assert.equal(user.summary.mobile, '+61 400 000 000');
   assert.equal(user.summary.email, 'admin8@gmail.com');
   assert.equal(user.summary.role, 'ADMIN');
-  assert.equal(user.summary.lastInteraction, '2026-09-15T07:15:19.105Z');
+  assert.equal(user.summary.lastInteraction, 'N/A');
   assert.equal(user.raw.profile.suburb_display, 'Sydney NSW');
 });

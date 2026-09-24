@@ -9,7 +9,6 @@ test('task detail page renders the offer discussion dashboard from the reference
   assert.match(source, /DashboardPanel/);
   assert.match(source, /params: Promise<\{ id: string \}>/);
   assert.match(source, /'use client'/);
-  assert.match(source, /useSearchParams/);
   assert.match(source, /useState/);
   assert.match(source, /setIsFeeAdjustmentOpen\(true\)/);
   assert.match(source, /setIsFeeAdjustmentOpen\(false\)/);
@@ -21,12 +20,7 @@ test('task detail page renders the offer discussion dashboard from the reference
   assert.match(source, /activeTab === 'offers'/);
   assert.match(source, /activeTab === 'questions'/);
   assert.match(source, /href=\{`\/tasks\/\$\{taskId\}\/offers\/\$\{offer\.slug\}`\}/);
-  assert.match(source, /TaskDetailStatus/);
-  assert.match(source, /const getTaskDetailStatus/);
-  assert.match(source, /statusParam/);
   assert.match(source, /decodeURIComponent\(id\)/);
-  assert.match(source, /normalizedId === 'TSK-4423'/);
-  assert.match(source, /normalizedId === 'TSK-4424'/);
 
   for (const text of [
     'Tasks',
@@ -39,19 +33,14 @@ test('task detail page renders the offer discussion dashboard from the reference
     'Offers',
     'Questions',
     'Status Timeline',
-    'Task Posted',
-    'Offer Received',
-    'Provider Assigned',
-    'Completed',
     'Administrative Details',
     'Completion Docs',
-    'No documents uploaded yet.',
     'Dispute Info',
     'No active disputes.',
     'Provider Offers',
     'Total Bid',
     'Service Amt:',
-    'Commission (10%):',
+    'Commission:',
     'Other Fees:',
     'Provider Payout:',
     'Offer Discussion',

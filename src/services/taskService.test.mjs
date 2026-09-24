@@ -3,6 +3,32 @@ import test from 'node:test';
 
 import taskService from './taskService.js';
 
+test('fetchTasksPage retains combined filters across pages and serializes both offers choices', async () => {
+  for (const hasOffers of [true, false]) {
+    for (const page of [1, 3]) {
+      await taskService.fetchTasksPage({
+        baseUrl: 'https://api.vtasker.com.au/', page, pageSize: 10,
+        search: 'clean room', suburb: 'Bondi Beach', state: 'NSW', status: 'active',
+        hasOffers, dateCreatedAfter: '2026-09-01', dateCreatedBefore: '2026-09-24',
+        authenticatedFetch: async (url, options) => {
+          const params = new URL(url).searchParams;
+          assert.equal(params.get('has_offers'), String(hasOffers));
+          assert.equal(params.get('page') || '1', String(page));
+          assert.equal(params.get('search'), 'clean room');
+          assert.equal(params.get('suburb'), 'Bondi Beach');
+          assert.equal(params.get('state'), 'NSW');
+          assert.equal(params.get('status'), 'active');
+          assert.equal(params.get('date_created_after'), '2026-09-01');
+          assert.equal(params.get('date_created_before'), '2026-09-24');
+          assert.equal('hasOffers' in options, false);
+          return { ok: true, json: async () => ({ results: [], count: 0 }) };
+        },
+      });
+    }
+  }
+  assert.equal(new URL(taskService.getTasksEndpoint('https://api.example.com')).search, '');
+});
+
 test('fetchTasksPage requests task filters and pagination from api/tasks', async () => {
   const calls = [];
 

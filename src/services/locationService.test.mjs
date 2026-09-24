@@ -90,3 +90,29 @@ test('fetchAllSuburbs and fetchSuburbsByState request /api/suburbs/ endpoint and
   assert.equal(result.suburbs[0].name, 'Andheri');
   assert.equal(result.count, 1);
 });
+test('createState sends only the required state fields and a numeric country ID', async () => {
+  const { createState } = await import('./locationService.js');
+  for (const isActive of [true, false]) {
+    await createState({ name: 'Victoria', code: 'VIC', countryId: '7', countryName: 'Australia', is_active: isActive }, {
+      baseUrl: 'https://api.example.com',
+      authenticatedFetch: async (url, options) => {
+        assert.equal(url, 'https://api.example.com/api/states/');
+        assert.equal(options.method, 'POST');
+        assert.deepEqual(JSON.parse(options.body), { name: 'Victoria', abbreviation: 'VIC', country: 7, is_active: isActive });
+        return { ok: true, json: async () => ({ id: 1, name: 'Victoria', abbreviation: 'VIC', country: 7, is_active: isActive }) };
+      },
+    });
+  }
+});
+test('updateState sends the complete state payload and preserves an inactive state', async () => {
+  const { updateState } = await import('./locationService.js');
+  await updateState('12', { name: 'Victoria', abbreviation: 'VIC', country: '7', is_active: false }, {
+    baseUrl: 'https://api.example.com',
+    authenticatedFetch: async (url, options) => {
+      assert.equal(url, 'https://api.example.com/api/states/12/');
+      assert.equal(options.method, 'PUT');
+      assert.deepEqual(JSON.parse(options.body), { name: 'Victoria', abbreviation: 'VIC', country: 7, is_active: false });
+      return { ok: true, json: async () => ({ id: 12, ...JSON.parse(options.body) }) };
+    },
+  });
+});

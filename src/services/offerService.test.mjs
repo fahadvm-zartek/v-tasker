@@ -1,5 +1,24 @@
 import test from 'node:test';
+
+test('missing offer amounts stay unavailable instead of inventing prices and commissions', async () => {
+  const { default: service } = await import('./offerService.js');
+  const offer = service.normalizeOffer({ id: 9 });
+  for (const key of ['bid', 'serviceAmount', 'commission', 'otherFees', 'payout']) assert.equal(offer[key], 'N/A');
+  const free = service.normalizeOffer({ id: 10, price: 0, service_amount: 0, commission: 0, other_fees: 0, payout: 0 });
+  assert.equal(free.bid, '$0.00');
+});
 import assert from 'node:assert/strict';
+
+test('an empty task offer list stays empty without fetching an unrelated offer', async () => {
+  const calls = [];
+  const offers = await fetchOffersByTask('49', { authenticatedFetch: async (url) => {
+    calls.push(url);
+    return { ok: true, json: async () => ({ results: [] }) };
+  } });
+  assert.deepEqual(offers, []);
+  assert.equal(calls.length, 1);
+  assert.equal(new URL(calls[0]).searchParams.get('task'), '49');
+});
 import {
   normalizeOffer,
   normalizeMessage,
@@ -34,7 +53,7 @@ test('normalizeOffer parses currency strings and breakdown fields correctly', ()
   assert.equal(normalized.status, 'PENDING');
 });
 
-test('normalizeOffer handles string doer name and fallback commission calculations', () => {
+test('normalizeOffer handles string doer name and unavailable commission fields', () => {
   const rawOffer = {
     id: 13,
     doer: 'Sarah J.',
@@ -49,8 +68,8 @@ test('normalizeOffer handles string doer name and fallback commission calculatio
   assert.equal(normalized.name, 'Sarah J.');
   assert.equal(normalized.initials, 'SJ');
   assert.equal(normalized.bid, '$200.00');
-  assert.equal(normalized.commission, '-$20.00');
-  assert.equal(normalized.payout, '$180.00');
+  assert.equal(normalized.commission, 'N/A');
+  assert.equal(normalized.payout, 'N/A');
   assert.equal(normalized.state, 'accepted');
 });
 

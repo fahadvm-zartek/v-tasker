@@ -262,16 +262,24 @@ const deleteCountry = async (id, options = {}) => {
   await readJson(response, 'Failed to delete country');
 };
 
+const buildStatePayload = (data) => {
+  const countryId = data.country ?? data.countryId ?? data.country_id;
+  const country = Number(countryId);
+  if (countryId === undefined || countryId === null || String(countryId).trim() === '' || !Number.isInteger(country) || country < 0) {
+    throw new Error('A valid country ID is required to save a state.');
+  }
+  return {
+    name: data.name,
+    abbreviation: data.abbreviation ?? data.code ?? '',
+    country,
+    is_active: data.is_active ?? true,
+  };
+};
+
 const createState = async (data, options = {}) => {
   const { baseUrl, ...requestOptions } = options;
   const endpoint = `${resolveApiBaseUrl(baseUrl)}${LOCATION_API_PATHS.states}`;
-
-  const payloadData = {
-    ...data,
-    country: data.countryId || data.country,
-    country_name: data.countryName || data.country_name,
-    abbreviation: data.abbreviation || data.code,
-  };
+  const payloadData = buildStatePayload(data);
 
   const response = await requestJson(endpoint, {
     ...requestOptions,
@@ -289,7 +297,7 @@ const updateState = async (id, data, options = {}) => {
   const response = await requestJson(endpoint, {
     ...requestOptions,
     method: 'PUT',
-    body: JSON.stringify(data),
+    body: JSON.stringify(buildStatePayload(data)),
   });
   const payload = await readJson(response, 'Failed to update state');
   return normalizeState(payload);

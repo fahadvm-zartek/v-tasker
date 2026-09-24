@@ -107,6 +107,7 @@ test('createSubcategory and updateSubcategory send backend payloads for keywords
   assert.deepEqual(JSON.parse(calls[0].options.body), {
     category: '1',
     name: 'Deep Cleaning',
+    slug: 'deep-cleaning',
     description: 'Detailed cleaning',
     is_active: true,
     keywords: ['house cleaning', 'deep cleaning'],
@@ -122,6 +123,23 @@ test('createSubcategory and updateSubcategory send backend payloads for keywords
   });
   assert.equal(calls[1].url, 'https://api.example.com/api/subcategories/5/');
   assert.equal(calls[1].options.method, 'PATCH');
+  assert.equal('slug' in JSON.parse(calls[1].options.body), false);
+});
+
+test('createSubcategory generates a clean slug from the service name without changing other fields', async () => {
+  for (const [name, slug] of [
+    ['End of Lease Cleaning', 'end-of-lease-cleaning'],
+    ['  End   of Lease -- Cleaning!  ', 'end-of-lease-cleaning'],
+    ['Café Cleaning', 'cafe-cleaning'],
+  ]) {
+    const input = { name, categoryId: '1', description: 'Service description', keywords: ['cleaning'] };
+    await categoryService.createSubcategory(input, {
+      authenticatedFetch: async (_url, options) => {
+        assert.deepEqual(JSON.parse(options.body), { ...categoryService.buildSubcategoryPayload(input), slug });
+        return { ok: true, json: async () => ({ id: 5, name, slug }) };
+      },
+    });
+  }
 });
 
 test('createCategory sends the backend payload for a main service category', async () => {

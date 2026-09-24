@@ -1,6 +1,13 @@
 export interface AdminDashboardData {
   users?: {
     total?: number;
+    normal_users?: number;
+    student_users?: number;
+    suspended_count?: number;
+    expired_student_users?: number;
+    verification_requests?: number;
+    new_last_30_days?: number;
+    by_type?: { TASK_DOER?: number; ADMIN?: number; BOTH?: number; TASK_POSTER?: number };
     normal?: number;
     student?: number;
     both?: number;
@@ -12,6 +19,9 @@ export interface AdminDashboardData {
     inactive?: number;
     suspended?: number;
     pending_approvals?: number;
+    expired_students?: number;
+    reported_users?: number;
+    reported?: number;
     [key: string]: any;
   };
   tasks?: {

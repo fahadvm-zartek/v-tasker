@@ -100,13 +100,13 @@ export declare function fetchStatesByCountry(
 ): Promise<StateRegion[]>;
 
 export declare function createState(
-  data: { countryId?: string; country_id?: string; country?: string; countryName?: string; country_name?: string; name: string; code?: string; abbreviation?: string },
+  data: { countryId?: string; country_id?: string; country?: string | number; countryName?: string; country_name?: string; name: string; code?: string; abbreviation?: string; is_active?: boolean },
   options?: { baseUrl?: string; authenticatedFetch?: typeof fetch }
 ): Promise<StateRegion>;
 
 export declare function updateState(
   id: string,
-  data: { name: string; code?: string },
+  data: { name: string; abbreviation: string; country: string | number; is_active: boolean },
   options?: { baseUrl?: string; authenticatedFetch?: typeof fetch }
 ): Promise<StateRegion>;
 

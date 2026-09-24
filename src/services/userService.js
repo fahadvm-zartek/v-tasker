@@ -123,6 +123,15 @@ const readJson = async (response) => {
   return response.json();
 };
 
+const formatLastInteraction = (value) => {
+  const match = String(value ?? '').trim().match(/^(\d{4})-(\d{2})-(\d{2})(?:[T\s]|$)/);
+  if (!match) return EMPTY_VALUE;
+  const [, year, month, day] = match;
+  const date = new Date(`${year}-${month}-${day}T00:00:00Z`);
+  if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== `${year}-${month}-${day}`) return EMPTY_VALUE;
+  return new Intl.DateTimeFormat('en-US', { month: 'short', day: '2-digit', year: 'numeric', timeZone: 'UTC' }).format(date);
+};
+
 const normalizeUserSummary = (user, index = 0) => {
   const name = buildName(user);
   const id = String(pickFirst(user.id, user.uuid, user.user_id, user.userId, user.customer_id, user.customerId, index + 1));
@@ -135,7 +144,7 @@ const normalizeUserSummary = (user, index = 0) => {
     mobile: String(pickFirst(user.mobile, user.phone, user.phone_number, user.mobile_number, EMPTY_VALUE)),
     email: String(pickFirst(user.email, EMPTY_VALUE)),
     role: normalizeRole(pickFirst(user.user_type_name, user.user_type?.name, user.role, user.user_role, user.roles)),
-    lastInteraction: String(pickFirst(user.lastInteraction, user.last_interaction, user.last_login, user.updated_at, EMPTY_VALUE)),
+    lastInteraction: formatLastInteraction(user.last_interaction_at),
   };
 };
 

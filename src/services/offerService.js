@@ -73,7 +73,7 @@ const formatCurrency = (value) => {
 
 const normalizeOfferStatus = (status) => {
   const s = String(status ?? '').toLowerCase();
-  return ({ pending: 'PENDING', accepted: 'ACCEPTED', rejected: 'REJECTED', withdrawn: 'WITHDRAWN' })[s] || String(status ?? 'PENDING').toUpperCase();
+  return ({ pending: 'PENDING', accepted: 'ACCEPTED', rejected: 'REJECTED', withdrawn: 'WITHDRAWN' })[s] || String(status ?? 'N/A').toUpperCase();
 };
 
 /**
@@ -81,7 +81,7 @@ const normalizeOfferStatus = (status) => {
  * slug is set to String(id) so the ProviderOfferCard href test assertion passes.
  */
 const normalizeOffer = (offer, index = 0) => {
-  if (!offer || typeof offer !== 'object') return null;
+  if (!offer || typeof offer !== 'object' || Object.keys(offer).length === 0) return null;
   const id = String(pickFirst(offer?.id, offer?.offer_id, offer?.pk, index + 1));
   const doerObj = pickFirst(
     offer?.doer,
@@ -108,20 +108,18 @@ const normalizeOffer = (offer, index = 0) => {
     offer?.total_amount,
     offer?.service_amount,
     offer?.serviceAmount,
-    0,
   );
   const priceNum = parseNumber(rawPrice);
-  const safePrice = Number.isFinite(priceNum) ? priceNum : 0;
+  const safePrice = Number.isFinite(priceNum) ? priceNum : NaN;
 
   const rawServiceAmount = pickFirst(
     offer?.service_amount,
     offer?.serviceAmount,
     offer?.subtotal,
     offer?.base_amount,
-    rawPrice,
   );
   const serviceAmountNum = parseNumber(rawServiceAmount);
-  const safeServiceAmount = Number.isFinite(serviceAmountNum) ? serviceAmountNum : safePrice;
+  const safeServiceAmount = Number.isFinite(serviceAmountNum) ? serviceAmountNum : NaN;
 
   const rawCommission = pickFirst(
     offer?.commission,
@@ -132,17 +130,16 @@ const normalizeOffer = (offer, index = 0) => {
     offer?.admin_fee,
   );
   const commissionNum = parseNumber(rawCommission);
-  const safeCommission = Number.isFinite(commissionNum) ? Math.abs(commissionNum) : (safePrice * 0.10);
+  const safeCommission = Number.isFinite(commissionNum) ? Math.abs(commissionNum) : NaN;
 
   const rawOtherFees = pickFirst(
     offer?.other_fees,
     offer?.otherFees,
     offer?.tax,
     offer?.fees,
-    0,
   );
   const otherFeesNum = parseNumber(rawOtherFees);
-  const safeOtherFees = Number.isFinite(otherFeesNum) ? Math.abs(otherFeesNum) : 0;
+  const safeOtherFees = Number.isFinite(otherFeesNum) ? Math.abs(otherFeesNum) : NaN;
 
   const rawPayout = pickFirst(
     offer?.payout,
@@ -269,49 +266,11 @@ const fetchOffersByTask = async (taskId, options = {}) => {
   const { baseUrl, ...requestOptions } = options;
   const cleanId = String(taskId).replace(/^#/, '');
 
-  // 1. Try GET /api/offers/?task={cleanId}
-  try {
-    const params = new URLSearchParams({ task: cleanId });
-    const endpoint = `${resolveApiBaseUrl(baseUrl)}${OFFER_API_PATHS.offers}?${params.toString()}`;
-    const response = await requestJson(endpoint, { ...requestOptions, method: 'GET' });
-    if (response.ok) {
-      const payload = await readJson(response, 'Failed to fetch offers');
-      const collection = extractCollection(payload);
-      if (collection.length > 0) {
-        return collection.map(normalizeOffer).filter(Boolean);
-      }
-    }
-  } catch {
-    // Fall back to subsequent attempts
-  }
-
-  // 2. Try GET /api/offers/?task_id={cleanId}
-  try {
-    const params = new URLSearchParams({ task_id: cleanId });
-    const endpoint = `${resolveApiBaseUrl(baseUrl)}${OFFER_API_PATHS.offers}?${params.toString()}`;
-    const response = await requestJson(endpoint, { ...requestOptions, method: 'GET' });
-    if (response.ok) {
-      const payload = await readJson(response, 'Failed to fetch offers');
-      const collection = extractCollection(payload);
-      if (collection.length > 0) {
-        return collection.map(normalizeOffer).filter(Boolean);
-      }
-    }
-  } catch {
-    // Fall back to single offer
-  }
-
-  // 3. Fallback: Try fetching by single offer ID if cleanId matches an offer ID (e.g. 10 or 13)
-  try {
-    const offer = await fetchOfferById(cleanId, options);
-    if (offer && offer.id) {
-      return [offer];
-    }
-  } catch {
-    // Return empty array
-  }
-
-  return [];
+  const params = new URLSearchParams({ task: cleanId });
+  const endpoint = `${resolveApiBaseUrl(baseUrl)}${OFFER_API_PATHS.offers}?${params.toString()}`;
+  const response = await requestJson(endpoint, { ...requestOptions, method: 'GET' });
+  const payload = await readJson(response, 'Failed to fetch offers');
+  return extractCollection(payload).map(normalizeOffer).filter(Boolean);
 };
 
 // GET /api/offers/{id}/

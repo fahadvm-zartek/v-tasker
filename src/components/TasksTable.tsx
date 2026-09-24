@@ -3,6 +3,8 @@ import Link from 'next/link';
 
 interface TasksTableProps {
   className?: string;
+  tasks?: Task[];
+  isLoading?: boolean;
 }
 
 interface Task {
@@ -15,61 +17,13 @@ interface Task {
   amount: string;
 }
 
-const tasks: Task[] = [
-  {
-    id: '#TSK-4412',
-    date: '30 Oct 2024',
-    service: 'Regular Cleaning',
-    provider: 'Alexander Sterling',
-    avatar: 'AS',
-    status: 'Completed',
-    amount: '$150.00',
-  },
-  {
-    id: '#TSK-4415',
-    date: '24 Oct 2024',
-    service: 'Deep Cleaning',
-    provider: 'Maria Rodriguez',
-    avatar: 'MR',
-    status: 'Pending',
-    amount: '$85.00',
-  },
-  {
-    id: '#TSK-4328',
-    date: '02 Oct 2024',
-    service: 'Garden Maintenance',
-    provider: 'Unassigned',
-    avatar: '--',
-    status: 'Pending',
-    amount: '$320.00',
-  },
-  {
-    id: '#TSK-4312',
-    date: '15 Sep 2024',
-    service: 'Window Washing',
-    provider: 'James Chen',
-    avatar: 'JC',
-    status: 'Cancelled',
-    amount: '$0.00',
-  },
-  {
-    id: '#TSK-4307',
-    date: '13 Sep 2024',
-    service: 'Regular Cleaning',
-    provider: 'Alexander Sterling',
-    avatar: 'AS',
-    status: 'Completed',
-    amount: '$150.00',
-  },
-];
-
 const statusStyles = {
   Completed: 'bg-[#c9f5de] text-[#087443]',
   Pending: 'bg-[#e9edf4] text-[#526070]',
   Cancelled: 'bg-[#ffd7d4] text-[#b42318]',
 };
 
-const TasksTable: React.FC<TasksTableProps> = ({ className }) => {
+const TasksTable: React.FC<TasksTableProps> = ({ className, tasks = [], isLoading = false }) => {
   return (
     <section className={`ui-card ${className ?? ''}`}>
       <div className="flex h-[37px] items-center justify-between px-3">
@@ -91,7 +45,7 @@ const TasksTable: React.FC<TasksTableProps> = ({ className }) => {
           </tr>
         </thead>
         <tbody>
-          {tasks.map((task) => (
+          {isLoading ? <tr><td colSpan={6} className="p-4"><div role="status" aria-label="Loading tasks" className="h-20 animate-pulse rounded bg-slate-200" /></td></tr> : tasks.length === 0 ? <tr><td colSpan={6} className="p-6 text-center text-[12px] text-[#64748b]">No tasks available.</td></tr> : tasks.map((task) => (
             <tr key={task.id} className="ui-table-row h-[57px]">
               <td className="px-3 text-[15px] font-bold text-[#0b63ce]">{task.id}</td>
               <td className="px-3 text-[14px] text-[#66758e]">{task.date}</td>

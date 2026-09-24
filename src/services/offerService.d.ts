@@ -1,6 +1,6 @@
 import type { AuthRequestOptions } from './authService';
 
-export type OfferStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'WITHDRAWN';
+export type OfferStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'WITHDRAWN' | 'N/A';
 
 export type NormalizedOffer = {
   id: string;
