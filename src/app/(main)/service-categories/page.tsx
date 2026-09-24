@@ -2034,7 +2034,6 @@ const ServiceCategoriesPage = () => {
                 Manage and organize the types of services offered on the platform.
               </p>
             </div>
-            <BreadcrumbNav onNavigateHome={() => setServiceDetail(null)} />
           </header>
 
           <div className="grid gap-4 px-5 sm:grid-cols-2 xl:grid-cols-3">
