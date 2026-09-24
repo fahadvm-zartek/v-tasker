@@ -974,7 +974,6 @@ const AddChecklistItemModal = ({
         {items.map((modal, index) => (
         <fieldset key={index} disabled={isSaving} className="space-y-4 rounded-[6px] border border-[#e4eaf2] p-3">
           <legend className="px-1 text-[12px] font-bold text-[#334155]">Item {index + 1}</legend>
-          {!editing && items.length > 1 && <button type="button" onClick={() => onRemoveItem(index)} className="text-[12px] text-red-600">Remove Item</button>}
         <div>
           <label htmlFor={`checklist-field-name-${index}`} className="text-[11px] font-bold uppercase tracking-[0.04em] text-[#334155]">
             Field Name <span className="text-[#ef4444]">*</span>
@@ -1034,10 +1033,12 @@ const AddChecklistItemModal = ({
           />
           <label htmlFor={`mark-required-checkbox-${index}`} className="text-[12px] font-medium text-[#172033]">
             Mark as Required
-            <span className="block text-[11px] font-normal text-[#64748b]">
-              Providers cannot offer this service without submitting this item.
-            </span>
           </label>
+          {!editing && items.length > 1 && (
+            <button type="button" aria-label={`Remove item ${index + 1}`} title="Remove item" onClick={() => onRemoveItem(index)} className="ml-auto flex h-7 w-7 shrink-0 items-center justify-center rounded-[5px] text-red-600 hover:bg-red-50">
+              <Trash2 size={14} aria-hidden="true" />
+            </button>
+          )}
         </div>
 
         </fieldset>
