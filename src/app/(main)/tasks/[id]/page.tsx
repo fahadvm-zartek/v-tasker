@@ -30,6 +30,7 @@ type TaskDetailTab = 'offers' | 'questions';
 type TimelineTone = 'done' | 'active' | 'danger' | 'pending';
 
 type TimelineItem = {
+  status: string;
   title: string;
   time: string;
   detail: string;
@@ -1005,7 +1006,7 @@ export default function TaskDetailPage({
                 <div className="mt-6 space-y-5 border-t border-[#edf1f6] pt-5">
                   {timelineItems.length === 0 && <p className="text-[12px] font-medium text-[#64748b]">No timeline available.</p>}
                   {timelineItems.map((item, index) => (
-                    <div key={item.title} className="relative flex gap-4">
+                    <div key={`${index}-${item.title}`} className="relative flex gap-4">
                       {index < timelineItems.length - 1 ? (
                         <span className="absolute left-[13px] top-8 h-[calc(100%+12px)] w-px bg-[#e6edf5]" aria-hidden="true" />
                       ) : null}
@@ -1014,8 +1015,8 @@ export default function TaskDetailPage({
                         <h3 className={cn('text-[13px] font-bold', item.tone === 'pending' ? 'text-[#94a3b8]' : item.tone === 'active' ? 'text-[#2563eb]' : 'text-[#172033]')}>
                           {item.title}
                         </h3>
-                        <p className="mt-1 text-[11px] font-medium text-[#64748b]">{item.time}</p>
-                        {item.detail ? <p className="mt-2 text-[12px] font-medium text-[#475569]">{item.detail}</p> : null}
+                        <p className={cn('mt-1 text-[11px] font-medium', item.tone === 'pending' ? 'text-[#94a3b8]' : 'text-[#64748b]')}>{item.time}{item.status ? ` · ${item.status}` : ''}</p>
+                        {item.detail ? <p className={cn('mt-2 text-[12px] font-medium', item.tone === 'pending' ? 'text-[#94a3b8]' : 'text-[#475569]')}>{item.detail}</p> : null}
                         {item.note ? (
                           <div className="mt-3 rounded-[6px] bg-[#eaf2ff] px-4 py-3 text-[12px] font-medium leading-5 text-[#2563eb]">
                             {item.note}

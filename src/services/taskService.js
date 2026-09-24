@@ -184,81 +184,21 @@ const requestJson = async (url, { authenticatedFetch, ...options } = {}) => {
 };
 
 const normalizeTimelineItem = (item) => {
-  if (typeof item === 'string') {
-    return {
-      title: item,
-      time: EMPTY_VALUE,
-      detail: '',
-      tone: 'done',
-    };
-  }
-  if (!item || typeof item !== 'object') return null;
-
-  const title = String(pickFirst(
-    item.title,
-    item.name,
-    item.status,
-    item.event,
-    item.action,
-    item.stage,
-    item.step,
-    'Task Step',
-  ));
-
-  const rawTime = pickFirst(
-    item.time,
-    item.timestamp,
-    item.created_at,
-    item.createdAt,
-    item.date,
-    item.datetime,
-    '',
-  );
-  let timeStr = String(rawTime || EMPTY_VALUE);
-  if (rawTime) {
-    const formatted = formatDateCreated(rawTime);
-    if (formatted && formatted !== EMPTY_VALUE) {
-      timeStr = formatted;
-    }
-  }
-
-  const detail = String(pickFirst(
-    item.detail,
-    item.description,
-    item.message,
-    item.details,
-    item.comment,
-    '',
-  ));
-
-  const note = item.note || item.notes ? String(item.note ?? item.notes) : undefined;
-
-  let tone = 'done';
-  const toneRaw = String(pickFirst(item.tone, item.state, item.status_type, item.status, '')).toLowerCase();
-
-  if (['done', 'completed', 'success', 'finished', 'passed'].includes(toneRaw)) {
-    tone = 'done';
-  } else if (['active', 'in_progress', 'inprogress', 'current', 'ongoing'].includes(toneRaw)) {
-    tone = 'active';
-  } else if (['danger', 'error', 'failed', 'cancelled', 'canceled', 'dispute', 'disputed'].includes(toneRaw)) {
-    tone = 'danger';
-  } else if (['pending', 'upcoming', 'waiting'].includes(toneRaw)) {
-    tone = 'pending';
-  } else if (item.is_done === true || item.completed === true) {
-    tone = 'done';
-  } else if (item.is_active === true) {
-    tone = 'active';
-  }
-
+  if (!item || typeof item !== 'object' || Array.isArray(item)) return null;
+  const status = typeof item.status === 'string' ? item.status : '';
+  const normalizedStatus = status.toLowerCase();
+  const tone = normalizedStatus === 'completed' ? 'done'
+    : ['active', 'in_progress'].includes(normalizedStatus) ? 'active'
+    : ['cancelled', 'canceled', 'deleted', 'dispute', 'disputed', 'failed'].includes(normalizedStatus) ? 'danger'
+    : 'pending';
   return {
-    title,
-    time: timeStr,
-    detail,
+    title: String(item.label ?? EMPTY_VALUE),
+    detail: String(item.description ?? ''),
+    time: item.timestamp == null ? EMPTY_VALUE : formatDateCreated(item.timestamp),
+    status,
     tone,
-    ...(note ? { note } : {}),
   };
 };
-
 const normalizeTaskDetail = (task) => {
   if (!task || typeof task !== 'object' || Object.keys(task).length === 0) return null;
   const rawId = String(pickFirst(task.id, task.task_id, task.uuid, 'unknown'));
@@ -266,7 +206,7 @@ const normalizeTaskDetail = (task) => {
   const doer = task.doer ?? task.provider ?? task.assignee ?? task.worker ?? null;
   const posterName = String(pickFirst(task.poster_name, task.posterName, task.customer_name, task.customerName, buildName(poster)));
 
-  const rawTimeline = pickFirst(task.status_timeline, task.statusTimeline, task.timeline, null);
+  const rawTimeline = task.status_timeline;
   const statusTimeline = Array.isArray(rawTimeline)
     ? rawTimeline.map(normalizeTimelineItem).filter(Boolean)
     : null;

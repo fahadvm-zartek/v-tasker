@@ -924,17 +924,23 @@ const ManageKeywordsModal = ({
 );
 
 const AddChecklistItemModal = ({
-  modal,
+  items,
+  editing = false,
+  onAddItem,
+  onRemoveItem,
   onClose,
   onSave,
   onChangeField,
   isSaving = false,
   error = '',
 }: {
-  modal: NonNullable<ChecklistModalState>;
+  items: NonNullable<ChecklistModalState>[];
+  editing?: boolean;
+  onAddItem: () => void;
+  onRemoveItem: (index: number) => void;
   onClose: () => void;
   onSave: () => void;
-  onChangeField: (changes: Partial<NonNullable<ChecklistModalState>>) => void;
+  onChangeField: (index: number, changes: Partial<NonNullable<ChecklistModalState>>) => void;
   isSaving?: boolean;
   error?: string;
 }) => typeof document === 'undefined' ? null : createPortal(
@@ -948,10 +954,10 @@ const AddChecklistItemModal = ({
       <header className="flex shrink-0 items-start justify-between gap-4 border-b border-[#e4eaf2] px-5 py-4">
         <div>
           <h2 id="add-checklist-item-title" className="text-[18px] font-bold leading-6 text-[#172033]">
-            Add New Checklist Item
+            {editing ? 'Edit Checklist Item' : 'Add New Checklist Items'}
           </h2>
           <p className="mt-1 text-[12px] font-medium text-[#64748b]">
-            Create a question for services under {modal.categoryTitle}
+            Checklist questions for {items[0]?.categoryTitle}
           </p>
         </div>
         <button
@@ -965,28 +971,32 @@ const AddChecklistItemModal = ({
       </header>
 
       <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-5 py-4">
+        {items.map((modal, index) => (
+        <fieldset key={index} disabled={isSaving} className="space-y-4 rounded-[6px] border border-[#e4eaf2] p-3">
+          <legend className="px-1 text-[12px] font-bold text-[#334155]">Item {index + 1}</legend>
+          {!editing && items.length > 1 && <button type="button" onClick={() => onRemoveItem(index)} className="text-[12px] text-red-600">Remove Item</button>}
         <div>
-          <label htmlFor="checklist-field-name" className="text-[11px] font-bold uppercase tracking-[0.04em] text-[#334155]">
+          <label htmlFor={`checklist-field-name-${index}`} className="text-[11px] font-bold uppercase tracking-[0.04em] text-[#334155]">
             Field Name <span className="text-[#ef4444]">*</span>
           </label>
           <input
-            id="checklist-field-name"
+            id={`checklist-field-name-${index}`}
             type="text"
             value={modal.question}
-            onChange={(e) => onChangeField({ question: e.target.value })}
+            onChange={(e) => onChangeField(index, { question: e.target.value })}
             placeholder="e.g. Number of Bathrooms"
             className="mt-1.5 h-9 w-full rounded-[6px] border border-[#d5dfec] bg-white px-3 text-[12px] font-medium text-[#172033] outline-hidden focus:border-[#1B3061]"
           />
         </div>
 
         <div>
-          <label htmlFor="checklist-field-type" className="text-[11px] font-bold uppercase tracking-[0.04em] text-[#334155]">
+          <label htmlFor={`checklist-field-type-${index}`} className="text-[11px] font-bold uppercase tracking-[0.04em] text-[#334155]">
             Field Type
           </label>
           <select
-            id="checklist-field-type"
+            id={`checklist-field-type-${index}`}
             value={modal.type}
-            onChange={(e) => onChangeField({ type: e.target.value })}
+            onChange={(e) => onChangeField(index, { type: e.target.value })}
             className="mt-1.5 h-9 w-full rounded-[6px] border border-[#d5dfec] bg-white px-3 text-[12px] font-medium text-[#172033] outline-hidden focus:border-[#1B3061]"
           >
             {checklistQuestionTypes.map(field => <option key={field.value} value={field.value}>{field.label}</option>)}
@@ -996,15 +1006,15 @@ const AddChecklistItemModal = ({
 
         {['single_select', 'multiple_select'].includes(modal.type) ? (
           <div>
-            <label htmlFor="checklist-field-options" className="text-[11px] font-bold uppercase tracking-[0.04em] text-[#334155]">
+            <label htmlFor={`checklist-field-options-${index}`} className="text-[11px] font-bold uppercase tracking-[0.04em] text-[#334155]">
               Options
             </label>
             <input
-              id="checklist-field-options"
+              id={`checklist-field-options-${index}`}
               type="text"
               value={modal.options.join(', ')}
               onChange={(e) =>
-                onChangeField({
+                onChangeField(index, {
                   options: e.target.value.split(',').map((opt) => opt.trim()),
                 })
               }
@@ -1016,13 +1026,13 @@ const AddChecklistItemModal = ({
 
         <div className="flex items-center gap-3">
           <input
-            id="mark-required-checkbox"
+            id={`mark-required-checkbox-${index}`}
             type="checkbox"
             checked={modal.required}
-            onChange={(e) => onChangeField({ required: e.target.checked })}
+            onChange={(e) => onChangeField(index, { required: e.target.checked })}
             className="h-4 w-4 accent-[#1B3061]"
           />
-          <label htmlFor="mark-required-checkbox" className="text-[12px] font-medium text-[#172033]">
+          <label htmlFor={`mark-required-checkbox-${index}`} className="text-[12px] font-medium text-[#172033]">
             Mark as Required
             <span className="block text-[11px] font-normal text-[#64748b]">
               Providers cannot offer this service without submitting this item.
@@ -1030,6 +1040,9 @@ const AddChecklistItemModal = ({
           </label>
         </div>
 
+        </fieldset>
+        ))}
+        {!editing && <button type="button" disabled={isSaving} onClick={onAddItem} className="inline-flex h-9 items-center gap-2 rounded-[6px] border border-[#d5dfec] px-3 text-[12px] font-bold text-[#1B3061]"><Plus size={14} /> Add Another Item</button>}
         <div className="flex gap-3 rounded-[5px] bg-[#eef2ff] px-4 py-3">
           <Info size={15} className="mt-0.5 shrink-0 text-[#2563eb]" />
           <p className="text-[11px] font-medium leading-4 text-[#66758b]">
@@ -1050,10 +1063,10 @@ const AddChecklistItemModal = ({
         <button
           type="button"
           onClick={onSave}
-          disabled={isSaving || !modal.question.trim()}
+          disabled={isSaving || !items.length || items.some(item => !item.question.trim())}
           className="inline-flex h-9 items-center justify-center gap-2 rounded-[6px] bg-[#2563eb] px-5 text-[12px] font-bold text-white hover:bg-[#1d4ed8]"
         >
-          <Plus size={14} /> {isSaving ? 'Saving...' : 'Add Field'}
+          <Check size={14} /> {isSaving ? 'Saving...' : editing ? 'Save Changes' : 'Save Items'}
         </button>
       </footer>
     </div>
@@ -1153,7 +1166,7 @@ const ServiceChecklistDetailView = ({
   const [checklistError, setChecklistError] = useState('');
   const [checklistSaving, setChecklistSaving] = useState(false);
   const [checklistStatus, setChecklistStatus] = useState('');
-  const [fieldModal, setFieldModal] = useState<ChecklistModalState>(null);
+  const [fieldModal, setFieldModal] = useState<{ items: NonNullable<ChecklistModalState>[]; editingId?: string } | null>(null);
   const [fieldError, setFieldError] = useState('');
   const [isLoadingKeywords, setIsLoadingKeywords] = useState(true);
   const [hasLoadedKeywords, setHasLoadedKeywords] = useState(false);
@@ -1185,14 +1198,30 @@ const ServiceChecklistDetailView = ({
 
   const handleCreateField = async () => {
     if (!fieldModal || checklistSaving) return;
+    const invalid = fieldModal.items.findIndex(item => !item.question.trim() || (['single_select', 'multiple_select'].includes(item.type) && !item.options.some(option => option.trim())));
+    if (invalid >= 0) { setFieldError(`Item ${invalid + 1}: enter a field name and at least one option for selection fields.`); return; }
     setChecklistSaving(true);
     setFieldError('');
     try {
-      await checklistService.addChecklistQuestion(selectedSub.id, selectedSub.name, fieldModal);
+      if (fieldModal.editingId) {
+        const current = await checklistService.fetchChecklist(selectedSub.id);
+        if (!current.questions.some(question => question.id === fieldModal.editingId)) throw new Error('This checklist item no longer exists. Reload the checklist.');
+        await checklistService.saveChecklistQuestions(selectedSub.id, selectedSub.name, current.questions.map(question =>
+          question.id === fieldModal.editingId ? { ...question, ...fieldModal.items[0] } : question));
+      } else {
+        for (const item of fieldModal.items) {
+          await checklistService.addChecklistQuestion(selectedSub.id, selectedSub.name, item);
+          // Keep only unsaved items if a later request fails, so retry cannot duplicate successful items.
+          setFieldModal(current => current ? { ...current, items: current.items.slice(1) } : current);
+        }
+      }
       setFieldModal(null);
       try { await reloadChecklist(); }
       catch (error) { setChecklistError(`Field saved. Unable to refresh: ${getErrorMessage(error)}`); }
-    } catch (error) { setFieldError(getErrorMessage(error)); }
+    } catch (error) {
+      setFieldError(getErrorMessage(error));
+      await reloadChecklist().catch(() => undefined);
+    }
     finally { setChecklistSaving(false); }
   };
 
@@ -1318,7 +1347,7 @@ const ServiceChecklistDetailView = ({
             disabled={checklistLoading || checklistSaving || !selectedSub.id}
             onClick={() => {
               setFieldError('');
-              setFieldModal({ categoryTitle: selectedSub.name, question: '', type: 'text', required: false, options: [] });
+              setFieldModal({ items: [{ categoryTitle: selectedSub.name, question: '', type: 'text', required: false, options: [] }] });
             }}
             className="inline-flex h-9 items-center justify-center gap-2 rounded-[6px] bg-[#2563eb] px-4 text-[12px] font-bold text-white shadow-[0_8px_18px_rgba(37,99,235,0.18)] transition-colors hover:bg-[#1d4ed8]"
           >
@@ -1369,7 +1398,7 @@ const ServiceChecklistDetailView = ({
           </div>
 
           <div className="max-h-[calc(100vh-180px)] overflow-y-auto pt-3">
-            <div className="grid min-w-[700px] grid-cols-[48px_minmax(200px,1fr)_120px_140px_120px] bg-[#f1f5f9] px-4 py-3 text-[10px] font-bold uppercase tracking-[0.04em] text-[#64748b]">
+            <div className="grid min-w-[700px] grid-cols-[48px_minmax(200px,1fr)_120px_140px_156px] bg-[#f1f5f9] px-4 py-3 text-[10px] font-bold uppercase tracking-[0.04em] text-[#64748b]">
               <span>#</span>
               <span>CHECKLIST ITEM</span>
               <span>REQUIRED</span>
@@ -1381,7 +1410,7 @@ const ServiceChecklistDetailView = ({
               {checklistError && <p role="alert" className="px-4 py-3 text-[12px] text-red-600">{checklistError}</p>}
               {checklistLoading ? <p role="status" className="px-4 py-8 text-[13px] text-[#64748b]">Loading checklist...</p> : checklist.length ? (
                 checklist.map((q, idx) => (
-                  <div key={q.id || idx} className="grid grid-cols-[48px_minmax(200px,1fr)_120px_140px_120px] items-center px-4 py-3 text-[12px]">
+                  <div key={q.id || idx} className="grid grid-cols-[48px_minmax(200px,1fr)_120px_140px_156px] items-center px-4 py-3 text-[12px]">
                     <span className="text-[#8a98ad]">{String(idx + 1).padStart(2, '0')}</span>
                     <div>
                       <p className="font-semibold text-[#172033]">{q.question}</p>
@@ -1400,6 +1429,12 @@ const ServiceChecklistDetailView = ({
                       </span>
                     </div>
                     <div className="flex items-center justify-end gap-2">
+                      <button type="button" aria-label={`Edit ${q.question}`} disabled={checklistSaving} onClick={() => {
+                        setFieldError('');
+                        setFieldModal({ editingId: q.id, items: [{ ...q, categoryTitle: selectedSub.name, options: [...q.options] }] });
+                      }} className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[5px] text-[#64748b] hover:bg-[#eef2ff]">
+                        <Pencil size={14} />
+                      </button>
                       <button type="button" aria-label="Move question up" onClick={() => handleMoveQuestion(idx, -1)} className="flex h-7 w-7 items-center justify-center rounded-[5px] text-[#64748b] hover:bg-[#eef2ff]">
                         <ArrowUp size={14} />
                       </button>
@@ -1480,12 +1515,15 @@ const ServiceChecklistDetailView = ({
       )}
 
       {fieldModal && <AddChecklistItemModal
-        modal={fieldModal}
+        items={fieldModal.items}
+        editing={Boolean(fieldModal.editingId)}
+        onAddItem={() => setFieldModal(current => current ? { ...current, items: [...current.items, { categoryTitle: selectedSub.name, question: '', type: 'text', required: false, options: [] }] } : current)}
+        onRemoveItem={index => setFieldModal(current => current ? { ...current, items: current.items.filter((_, i) => i !== index) } : current)}
         isSaving={checklistSaving}
         error={fieldError}
         onClose={() => { if (!checklistSaving) setFieldModal(null); }}
         onSave={handleCreateField}
-        onChangeField={changes => setFieldModal(current => current ? { ...current, ...changes } : current)}
+        onChangeField={(index, changes) => setFieldModal(current => current ? { ...current, items: current.items.map((item, i) => i === index ? { ...item, ...changes } : item) } : current)}
       />}
 
       {/* Hidden reference render for test matching */}

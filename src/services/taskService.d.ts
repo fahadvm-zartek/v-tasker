@@ -7,7 +7,7 @@ export type TasksPageResult = { count: number; next: string | null; previous: st
 export type TaskRequestOptions = AuthRequestOptions & { authenticatedFetch?: typeof fetch; page?: number; pageSize?: number; search?: string; status?: string; state?: string; suburb?: string; taskType?: string; hasOffers?: boolean; dateCreatedAfter?: string; dateCreatedBefore?: string };
 
 export type TaskDetailPerson = { id: string; name: string; email: string };
-export type TaskTimelineItem = { title: string; time: string; detail: string; tone: 'done' | 'active' | 'danger' | 'pending'; note?: string };
+export type TaskTimelineItem = { title: string; time: string; detail: string; status: string; tone: 'done' | 'active' | 'danger' | 'pending'; note?: string };
 export type TaskDetail = {
   id: string;
   displayId: string;

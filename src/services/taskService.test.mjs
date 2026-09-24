@@ -161,6 +161,24 @@ test('normalizeTasksPage exposes supplied metrics and uses N/A for unavailable c
   });
 });
 
+test('timeline preserves API labels, exceptional events, order and null timestamps', () => {
+  const events = [
+    { label: 'Task Posted', description: 'Posted by customer', timestamp: '2026-09-24 10:00:00', status: 'completed' },
+    { label: 'Dispute', description: 'Review requested', timestamp: '2026-09-24 11:00:00', status: 'completed' },
+    { label: 'Task Deleted', description: 'Removed by admin', timestamp: null, status: 'pending', time: 'ignored', tone: 'done' },
+    { label: 'Review Completed', description: 'Awaiting review', timestamp: null, status: 'pending' },
+  ];
+  const result = taskService.normalizeTaskDetail({ id: 1, status_timeline: events }).statusTimeline;
+  assert.deepEqual(result.map(item => item.title), events.map(item => item.label));
+  assert.deepEqual(result.map(item => item.detail), events.map(item => item.description));
+  assert.deepEqual(result.map(item => item.status), events.map(item => item.status));
+  assert.deepEqual(result.map(item => item.tone), ['done', 'done', 'pending', 'pending']);
+  assert.equal(result[2].time, 'N/A');
+  assert.equal(result[3].time, 'N/A');
+  assert.equal(taskService.normalizeTaskDetail({ id: 1, timeline: [{ title: 'Completed' }] }).statusTimeline, null);
+  assert.deepEqual(taskService.normalizeTaskDetail({ id: 1, status_timeline: [] }).statusTimeline, []);
+});
+
 test('normalizeTaskDetail uses poster_name and normalizes status_timeline', () => {
   const detail = taskService.normalizeTaskDetail({
     id: 10,
@@ -168,8 +186,8 @@ test('normalizeTaskDetail uses poster_name and normalizes status_timeline', () =
     poster_name: 'new admin',
     status: 'IN_PROGRESS',
     status_timeline: [
-      { title: 'Task Posted', timestamp: '2026-09-12 09:00:00', detail: 'Task created', tone: 'done' },
-      { title: 'In Progress', timestamp: '2026-09-12 10:00:00', detail: 'Work started', tone: 'active' },
+      { label: 'Task Posted', timestamp: '2026-09-12 09:00:00', description: 'Task created', status: 'completed' },
+      { label: 'In Progress', timestamp: '2026-09-12 10:00:00', description: 'Work started', status: 'in_progress' },
     ],
   });
 
