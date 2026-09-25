@@ -35,6 +35,7 @@ type MenuItem = {
   href: string;
   icon: React.ComponentType<{ size?: number; strokeWidth?: number; className?: string }>;
   badge?: string;
+  hidden?: boolean;
   children?: Array<{
     label: string;
     href: string;
@@ -42,17 +43,18 @@ type MenuItem = {
 };
 
 const menuItems: MenuItem[] = [
-  { label: 'Dashboard', href: '/', icon: LayoutGrid },
+  { label: 'Dashboard', href: '/', icon: LayoutGrid, hidden: true },
   { label: 'Users', href: '/users', icon: Users },
   { label: 'Locations', href: '/locations', icon: MapPin },
   { label: 'Service Categories', href: '/service-categories', icon: Tags },
   { label: 'Tasks', href: '/tasks', icon: ClipboardList },
-  { label: 'Rewards Platform', href: '/rewards-platform', icon: Gift },
-  { label: 'Payment', href: '/payment', icon: CreditCard },
+  { label: 'Rewards Platform', href: '/rewards-platform', icon: Gift, hidden: true },
+  { label: 'Payment', href: '/payment', icon: CreditCard, hidden: true },
   {
     label: 'Resolution Center',
     href: '/disputes',
     icon: Scale,
+    hidden: true,
     children: [
       { label: 'Disputes', href: '/disputes' },
       { label: 'Cancellations', href: '/cancellations' },
@@ -62,13 +64,14 @@ const menuItems: MenuItem[] = [
     label: 'Chat Moderation',
     href: '/chat-moderation/overview',
     icon: MessageSquareWarning,
+    hidden: true,
     children: [
       { label: 'Overview', href: '/chat-moderation/overview' },
       { label: 'Moderation Logs', href: '/chat-moderation/logs' },
       { label: 'Rules', href: '/chat-moderation/rules' },
     ],
   },
-  { label: 'Reports', href: '/reports', icon: TriangleAlert },
+  { label: 'Reports', href: '/reports', icon: TriangleAlert, hidden: true },
   { label: 'Settings', href: '/settings', icon: Settings },
 ];
 
@@ -129,7 +132,7 @@ const Sidebar = () => {
       </div>
 
       <nav className="sidebar-nav-container flex-1 min-h-0 overflow-y-auto overflow-x-hidden py-6">
-        {menuItems.map((item) => {
+        {menuItems.filter((item) => !item.hidden).map((item) => {
           const Icon = item.icon;
           const isActive = isActivePath(item.href) || item.children?.some((child) => isActivePath(child.href));
           const shouldShowChildren = Boolean(item.children && isActive);

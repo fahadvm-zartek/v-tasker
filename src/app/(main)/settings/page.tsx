@@ -24,6 +24,9 @@ import LogoutButton from './LogoutButton';
 
 const { getStoredUserProfile } = authService;
 
+// Temporarily keep platform settings out of the UI while preserving their implementation.
+const SHOW_PLATFORM_SETTINGS = false;
+
 type SettingInputProps = {
   id: string;
   label: string;
@@ -179,6 +182,16 @@ export default function SettingsPage() {
   const handleSave = () => {
     alert('Settings saved successfully.');
   };
+
+  if (!SHOW_PLATFORM_SETTINGS) {
+    return (
+      <DashboardPageShell>
+        <div className="w-full max-w-2xl">
+          <AdminProfileCard />
+        </div>
+      </DashboardPageShell>
+    );
+  }
 
   return (
     <DashboardPageShell>
