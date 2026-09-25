@@ -167,6 +167,7 @@ const LoginCard = () => {
           <LoginField
             id="email"
             label="Email Address"
+              placeholder="Enter your email address"
             type="email"
             value={email}
             autoComplete="email"
@@ -181,6 +182,7 @@ const LoginCard = () => {
           <LoginField
             id="password"
             label="Password"
+              placeholder="Enter your password"
             type={isPasswordVisible ? 'text' : 'password'}
             value={password}
             autoComplete="current-password"
@@ -222,7 +224,7 @@ const LoginCard = () => {
         <button
           type="submit"
           disabled={!isFormValid || isSubmitting}
-          className="mt-6 flex h-[37px] w-full items-center justify-center rounded-[11px] bg-[#1B3061] text-[11px] font-semibold text-white shadow-[0_11px_19px_rgba(27,48,97,0.26)] transition-all duration-200 hover:bg-[#14244d] hover:shadow-[0_13px_22px_rgba(27,48,97,0.32)] focus:outline-none focus:ring-4 focus:ring-[#1B3061]/25 disabled:cursor-not-allowed disabled:opacity-65 disabled:shadow-none"
+          className="mt-6 flex h-[37px] w-full items-center justify-center rounded-[11px] bg-[#002059] text-[11px] font-semibold text-white shadow-[0_11px_19px_rgba(0,32,89,0.26)] transition-all duration-200 hover:bg-[#001846] hover:shadow-[0_13px_22px_rgba(0,32,89,0.32)] focus:outline-none focus:ring-4 focus:ring-[#002059]/25 disabled:cursor-not-allowed disabled:opacity-65 disabled:shadow-none"
         >
           Sign In
         </button>

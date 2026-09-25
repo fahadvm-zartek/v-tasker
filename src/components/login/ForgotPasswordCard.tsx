@@ -86,6 +86,7 @@ const ForgotPasswordCard = () => {
         <LoginField
           id="reset-email"
           label="Email Address"
+              placeholder="Enter your email address"
           type="email"
           value={email}
           autoComplete="email"

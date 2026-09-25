@@ -4,7 +4,7 @@ import { AlertTriangle, CheckCircle2, ClipboardList, Clock3, Eye, PackageOpen, P
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { DashboardPageShell, DashboardPagination, DashboardPanel, cn } from '../../../components';
-import { fetchTasksPage } from '../../../services/taskService';
+import { fetchFilteredTasksPage as fetchTasksPage } from '../../../services/taskService';
 import type { TaskMetrics, TaskSummary, TaskRequestOptions } from '../../../services/taskService';
 import { getTaskDateRange } from '../../../services/taskFilters';
 import { fetchAllStates, fetchAllSuburbs } from '../../../services/locationService';
@@ -73,8 +73,20 @@ export default function TasksPage() {
   const [suburbs, setSuburbs] = useState<Suburb[]>([]);
 
   useEffect(() => {
+    const nextSearch = search.trim();
+    if (nextSearch === (appliedFilters.search ?? '')) return;
+
+    const timeout = window.setTimeout(() => {
+      setAppliedFilters(current => ({ ...current, search: nextSearch }));
+      setCurrentPage(1);
+    }, 300);
+
+    return () => window.clearTimeout(timeout);
+  }, [search, appliedFilters.search]);
+
+  useEffect(() => {
     let isMounted = true;
-    fetchAllStates().then((items) => { if (isMounted) setStates(items); });
+    fetchAllStates().then((items) => { if (isMounted) setStates(items); }).catch(() => { if (isMounted) setFilterError('Unable to load states. Reload to try again.'); });
     const loadSuburbs = async () => {
       const first = await fetchAllSuburbs();
       const items = [...first.suburbs];
@@ -84,13 +96,14 @@ export default function TasksPage() {
       }
       if (isMounted) setSuburbs(items);
     };
-    void loadSuburbs();
+    void loadSuburbs().catch(() => { if (isMounted) setFilterError('Unable to load suburbs. Reload to try again.'); });
     return () => { isMounted = false; };
   }, []);
 
   useEffect(() => {
     let isMounted = true;
-    fetchTasksPage({ ...appliedFilters, page: currentPage, pageSize: PAGE_SIZE })
+    const controller = new AbortController();
+    fetchTasksPage({ ...appliedFilters, page: currentPage, pageSize: PAGE_SIZE, signal: controller.signal })
       .then((taskPage) => {
         if (!isMounted) return;
         setLoadError('');
@@ -102,7 +115,7 @@ export default function TasksPage() {
         setLoadError('Unable to load tasks. Please try again.');
         setTasks([]); setMetrics(EMPTY_METRICS); setTotalTasks(0); setHasNextPage(false); setHasPreviousPage(false);
       }).finally(() => { if (isMounted) { setLoadedRequest(requestKey); } });
-    return () => { isMounted = false; };
+    return () => { isMounted = false; controller.abort(); };
   }, [currentPage, appliedFilters, requestKey]);
 
   const totalPages = Math.max(1, Math.ceil(totalTasks / PAGE_SIZE));
@@ -110,17 +123,26 @@ export default function TasksPage() {
   const firstItem = tasks.length ? (currentPage - 1) * PAGE_SIZE + 1 : 0;
   const lastItem = tasks.length ? Math.min(firstItem + tasks.length - 1, totalTasks) : 0;
 
+  const selectedStateId = states.find(item => (item.code || item.name) === state)?.id;
+  const stateSuburbs = suburbs.filter(item => !state || [item.stateId, String(item.raw?.state?.id ?? ''), item.raw?.state?.code, item.raw?.state_code, item.raw?.state_abbreviation].some(value => value === state || (selectedStateId && value === selectedStateId)));
+
   const submitSearch = (event: React.FormEvent) => {
     event.preventDefault();
     try {
       const dateRange = getTaskDateRange(datePreset, startDate, endDate);
       setLoadedRequest('');
-      setAppliedFilters({ search: search.trim(), suburb, state, status, hasOffers: offers === '' ? undefined : offers === 'true', ...dateRange });
+      setAppliedFilters({ search: search.trim(), suburb, suburbName: suburbs.find(item => item.id === suburb)?.name, state, stateSuburbs: state ? stateSuburbs.flatMap(item => [item.id, item.name]) : [], status, hasOffers: offers === '' ? undefined : offers === 'true', ...dateRange });
       setCurrentPage(1);
       setFilterError('');
     } catch (error) {
       setFilterError(error instanceof Error ? error.message : 'Invalid date range.');
     }
+  };
+
+  const resetFilters = () => {
+    setSearch(''); setSuburb(''); setState(''); setStatus(''); setOffers('');
+    setDatePreset('all'); setStartDate(''); setEndDate(''); setFilterError('');
+    setLoadedRequest(''); setAppliedFilters({}); setCurrentPage(1);
   };
 
   return (
@@ -138,17 +160,16 @@ export default function TasksPage() {
         <DashboardPanel className="rounded-[8px]">
           <form onSubmit={submitSearch} className="border-b border-[#e6ebf3] px-4 py-4">
             <div className="flex flex-nowrap items-end gap-3 overflow-x-auto pb-2">
-            <label className="relative block h-9 min-w-[220px] flex-1"><Search aria-hidden="true" className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8190a6]" size={15} /><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search tasks title/customer/provider..." className="ui-control h-full w-full pl-9 pr-3 text-[11px] placeholder:text-[#93a0b4]" /></label>
-            <button type="submit" className="ui-button-primary h-9 shrink-0 px-4 text-[12px]">Search</button>
+            <label className="relative block h-9 min-w-[220px] flex-1"><Search aria-hidden="true" className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8190a6]" size={15} /><input type="search" aria-label="Search tasks" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search tasks title/customer/provider..." className="ui-control h-full w-full pl-9 pr-3 text-[11px] placeholder:text-[#93a0b4]" /></label>
             <div className="flex shrink-0 flex-nowrap items-end gap-3">
               <label className="text-[11px] font-medium text-[#64748b]">Suburbs
                 <select value={suburb} onChange={(event) => setSuburb(event.target.value)} className="ui-control mt-1 block h-9 w-[135px] px-3 text-[12px]">
                   <option value="">All</option>
-                  {[...new Set(suburbs.map((item) => item.name))].sort().map((name) => <option key={name} value={name}>{name}</option>)}
+                  {stateSuburbs.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
                 </select>
               </label>
               <label className="text-[11px] font-medium text-[#64748b]">States
-                <select value={state} onChange={(event) => setState(event.target.value)} className="ui-control mt-1 block h-9 w-[145px] px-3 text-[12px]">
+                <select value={state} onChange={(event) => { setState(event.target.value); setSuburb(''); }} className="ui-control mt-1 block h-9 w-[145px] px-3 text-[12px]">
                   <option value="">All</option>
                   {states.map((item) => <option key={item.id} value={item.code || item.name}>{item.name}</option>)}
                 </select>
@@ -156,7 +177,7 @@ export default function TasksPage() {
               <label className="text-[11px] font-medium text-[#64748b]">Status
                 <select value={status} onChange={(event) => setStatus(event.target.value)} className="ui-control mt-1 block h-9 w-[110px] px-3 text-[12px]">
                   <option value="">All</option>
-                  {['Pending', 'Active', 'Completed', 'Cancelled', 'Dispute', 'Deleted'].map((label) => <option key={label} value={label.toLowerCase()}>{label}</option>)}
+                  {['Draft', 'Open', 'Assigned', 'In Progress', 'Submitted', 'Completed', 'Expired', 'Cancelled'].map((label) => <option key={label} value={label.toUpperCase().replaceAll(' ', '_')}>{label}</option>)}
                 </select>
               </label>
               <label className="text-[11px] font-medium text-[#64748b]">Tasks
@@ -174,6 +195,7 @@ export default function TasksPage() {
                 <label className="text-[11px] font-medium text-[#64748b]">To<input type="date" required value={endDate} min={startDate || undefined} onChange={(event) => setEndDate(event.target.value)} className="ui-control mt-1 block h-9 px-3 text-[12px]" /></label>
               </>}
               <button type="submit" className="ui-button-primary h-9 px-4 text-[12px]">Filter</button>
+              <button type="button" onClick={resetFilters} className="ui-button-secondary h-9 px-4 text-[12px]">Reset</button>
             </div>
             </div>
             {filterError && <p role="alert" className="w-full text-[12px] text-red-600">{filterError}</p>}

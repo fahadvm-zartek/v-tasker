@@ -6,19 +6,12 @@ import { useRouter } from 'next/navigation';
 import { type FormEvent, useEffect, useRef, useState } from 'react';
 
 import authService from '../../services/authService';
+import { lettersOnly, validateName as validateRegisterName } from '../../services/nameValidation';
 import AppToast from '../AppToast';
 import LoginField from './LoginField';
 import LoginLogo from './LoginLogo';
 
 const { AuthApiError, register, persistAuthSession } = authService;
-
-const validateRegisterName = (value: string, requiredMessage: string) => {
-  if (!value.trim()) {
-    return requiredMessage;
-  }
-
-  return '';
-};
 
 const validateRegisterEmail = (value: string) => {
   const trimmedValue = value.trim();
@@ -124,12 +117,12 @@ const RegisterCard = () => {
     const nextConfirmPassword = confirmPasswordRef.current?.value ?? '';
 
     if (nextFirstName) {
-      setFirstName(nextFirstName);
+      setFirstName(lettersOnly(nextFirstName));
       setTouchedFields((current) => ({ ...current, firstName: true }));
     }
 
     if (nextLastName) {
-      setLastName(nextLastName);
+      setLastName(lettersOnly(nextLastName));
       setTouchedFields((current) => ({ ...current, lastName: true }));
     }
 
@@ -160,13 +153,13 @@ const RegisterCard = () => {
   }, []);
 
   const handleFirstNameInput = (event: FormEvent<HTMLInputElement>) => {
-    setFirstName(event.currentTarget.value);
+    setFirstName(lettersOnly(event.currentTarget.value));
     setApiFieldErrors((current) => ({ ...current, first_name: '' }));
     setTouchedFields((current) => ({ ...current, firstName: true }));
   };
 
   const handleLastNameInput = (event: FormEvent<HTMLInputElement>) => {
-    setLastName(event.currentTarget.value);
+    setLastName(lettersOnly(event.currentTarget.value));
     setApiFieldErrors((current) => ({ ...current, last_name: '' }));
     setTouchedFields((current) => ({ ...current, lastName: true }));
   };
@@ -260,6 +253,7 @@ const RegisterCard = () => {
             <LoginField
               id="register-first-name"
               label="First Name"
+              placeholder="Enter your first name"
               type="text"
               value={firstName}
               autoComplete="given-name"
@@ -268,12 +262,13 @@ const RegisterCard = () => {
               message={firstNameMessage}
               validationState={firstNameFieldState}
               onBlur={() => setTouchedFields((current) => ({ ...current, firstName: true }))}
-              onChange={(event) => setFirstName(event.currentTarget.value)}
+              onChange={(event) => setFirstName(lettersOnly(event.currentTarget.value))}
               onInput={handleFirstNameInput}
             />
             <LoginField
               id="register-last-name"
               label="Last Name"
+              placeholder="Enter your last name"
               type="text"
               value={lastName}
               autoComplete="family-name"
@@ -282,12 +277,13 @@ const RegisterCard = () => {
               message={lastNameMessage}
               validationState={lastNameFieldState}
               onBlur={() => setTouchedFields((current) => ({ ...current, lastName: true }))}
-              onChange={(event) => setLastName(event.currentTarget.value)}
+              onChange={(event) => setLastName(lettersOnly(event.currentTarget.value))}
               onInput={handleLastNameInput}
             />
             <LoginField
               id="register-email"
               label="Email Address"
+              placeholder="Enter your email address"
               type="email"
               value={email}
               autoComplete="email"
@@ -302,6 +298,7 @@ const RegisterCard = () => {
             <LoginField
               id="register-password"
               label="Password"
+              placeholder="Create a password (8+ characters)"
               type="password"
               value={password}
               autoComplete="new-password"
@@ -316,6 +313,7 @@ const RegisterCard = () => {
             <LoginField
               id="register-confirm-password"
               label="Confirm Password"
+              placeholder="Re-enter your password"
               type="password"
               value={confirmPassword}
               autoComplete="new-password"

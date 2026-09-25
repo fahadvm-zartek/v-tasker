@@ -231,115 +231,6 @@ test('user details page includes tabs and stacked below-the-fold sections', asyn
   assert.match(source, /space-y-6/);
 });
 
-test('user details task history tab matches the reference table view', async () => {
-  const source = await readDetailsPage();
-
-  for (const text of [
-    'Task Poster',
-    'Task Doer',
-    'Search tasks title/customer/provider...',
-    'Task Status: All',
-    'Date Created: All Time',
-    'Filter',
-    'Task ID',
-    'Date',
-    'Service Name',
-    'Doer',
-    'Status',
-    'Amount',
-    'Reward Points',
-    '#TSK-4412',
-    '24 Oct 2024',
-    'Regular Cleaning',
-    'Alexander Sterling',
-    'Completed',
-    '$150.00',
-    '+100 pts',
-    '#TSK-4415',
-    'Garden Maintenance',
-    'Maria Rodriguez',
-    '#TSK-4428',
-    'Deep Cleaning',
-    'Unassigned',
-    '#TSK-4390',
-    'Window Washing',
-    'Canceled',
-    'Showing 1 to 5 of 24 tasks',
-  ]) {
-    assert.match(source, new RegExp(text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
-  }
-
-  assert.match(source, /const taskHistoryRows/);
-  assert.match(source, /const TaskHistoryPanel/);
-  assert.match(source, /grid-cols-\[112px_118px_minmax\(150px,1\.2fr\)_minmax\(150px,1fr\)_118px_100px_130px\]/);
-});
-
-test('user details task history task doer subtab matches the reference table view', async () => {
-  const source = await readDetailsPage();
-
-  for (const text of [
-    'const taskDoerRows',
-    "useState('Task Doer')",
-    'Task Poster',
-    'Milestone',
-    'Action',
-    '#TSK-8921',
-    'Oct 24, 2023',
-    'Premium Site Inspection',
-    'Sarah Jenkins',
-    '$145.00',
-    'Milestone2 / Task16',
-    'View Receipt',
-    '#TSK-8925',
-    'Oct 25, 2023',
-    'Emergency Repair Routing',
-    'Marcus Thorne',
-    '$210.00',
-    'Milestone2 / Task 15',
-    '#TSK-8890',
-    'Oct 22, 2023',
-    'Standard Installation',
-    'TechNova Inc.',
-    '$85.50',
-    'Milestone1 / Task14',
-  ]) {
-    assert.match(source, new RegExp(text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
-  }
-
-  assert.match(source, /activeTaskHistoryTab === 'Task Doer'/);
-  assert.match(source, /grid-cols-\[112px_118px_minmax\(150px,1\.2fr\)_minmax\(150px,1fr\)_118px_110px_150px_104px\]/);
-});
-
-test('user details task history filters use reference dropdown options', async () => {
-  const source = await readDetailsPage();
-  const taskHistoryBlock = extractBlock(source, 'const TaskHistoryPanel = () => {', 'const AccountDetailsPanel');
-
-  for (const text of [
-    'const taskStatusFilterOptions',
-    'const dateCreatedFilterOptions',
-    'All',
-    'Assigned',
-    'Done',
-    'Pending',
-    'Cancelled',
-    'Unpaid',
-    'Expired',
-    'Dispute',
-    'Today',
-    'Last 7 Days',
-    'Last 30 Days',
-    'Custom Range',
-  ]) {
-    assert.match(source, new RegExp(text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
-  }
-
-  assert.match(taskHistoryBlock, /openTaskFilter === 'status'/);
-  assert.match(taskHistoryBlock, /openTaskFilter === 'date'/);
-  assert.match(source, /absolute left-0 top-\[calc\(100%\+10px\)\] z-50/);
-  assert.match(source, /bg-\[#dbe5ff\]/);
-  assert.match(source, /border-\[#9aa6b8\]/);
-});
-
 test('user details payment history tab matches the reference transaction view', async () => {
   const source = await readDetailsPage();
 
@@ -610,7 +501,7 @@ test('user details tab panels keep account details and task history separate', a
 
   assert.match(source, /useState\('Account Details'\)/);
   assert.match(source, /onClick=\{\(\) => setActiveTab\(tab\)\}/);
-  assert.match(source, /activeTab === 'Task History' \? <TaskHistoryPanel \/> : null/);
+  assert.match(source, /activeTab === 'Task History' \? <TaskHistoryPanel key=\{params.id\} userId=\{params.id \|\| ''\} \/> : null/);
   assert.match(source, /activeTab === 'Account Details'/);
   assert.match(source, /const AccountDetailsPanel/);
 });

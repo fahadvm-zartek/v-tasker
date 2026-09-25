@@ -3,6 +3,18 @@ import test from 'node:test';
 
 import taskService from './taskService.js';
 
+test('task detail formats dollar budgets with two decimal places', () => {
+  for (const [budget, expected] of [[100, '$100.00'], ['100.5', '$100.50'], ['$1,234.00', '$1,234.00'], [0, '$0.00'], [-100, '-$100.00'], [null, 'N/A'], ['invalid', 'N/A']]) {
+    assert.equal(taskService.normalizeTaskDetail({ id: 1, budget }).budget, expected);
+  }
+});
+
+test('task detail preserves zero viewers and distinguishes unavailable counts', () => {
+  for (const [fields, expected] of [[{ views_count: 142 }, 142], [{ views: 0 }, 0], [{ view_count: '12' }, 12], [{ total_task_viewers: 23 }, 23], [{}, null], [{ views_count: 'invalid' }, null], [{ views_count: -1 }, null]]) {
+    assert.equal(taskService.normalizeTaskDetail({ id: 1, ...fields }).viewsCount, expected);
+  }
+});
+
 test('fetchTasksPage retains combined filters across pages and serializes both offers choices', async () => {
   for (const hasOffers of [true, false]) {
     for (const page of [1, 3]) {

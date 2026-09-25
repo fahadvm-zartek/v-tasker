@@ -868,7 +868,7 @@ export default function TaskDetailPage({
   const taskPosterLink = taskDetail?.poster?.id ? `/users/${taskDetail.poster.id}` : '#';
   const taskLocation = formatTaskLocation(taskDetail);
   const taskBudget = taskDetail?.budget || '';
-  const taskViewsDisplay = taskDetail?.raw?.views_count != null || taskDetail?.raw?.views != null ? `${taskDetail.viewsCount} views` : '';
+  const taskViewsDisplay = taskDetail?.viewsCount != null ? `${taskDetail.viewsCount.toLocaleString('en-AU')} views` : 'N/A';
 
   const disputeDisplayed = liveDispute ?? null;
   const timelineItems = buildTimeline(taskDetail);
@@ -977,7 +977,7 @@ export default function TaskDetailPage({
                     : 'font-medium text-[#475569] hover:text-[#2563eb]',
                 )}
               >
-                Offers ({offersForStatus.length})
+                Offers
               </button>
               <button
                 type="button"
@@ -989,7 +989,7 @@ export default function TaskDetailPage({
                     : 'font-medium text-[#475569] hover:text-[#2563eb]',
                 )}
               >
-                Questions ({displayQuestions.length})
+                Questions
               </button>
             </div>
           </div>

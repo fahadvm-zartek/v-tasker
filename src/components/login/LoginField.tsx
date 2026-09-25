@@ -13,6 +13,7 @@ type LoginFieldProps = {
   label: string;
   type?: 'email' | 'password' | 'text';
   value?: string;
+  placeholder?: string;
   autoComplete?: string;
   icon: ReactNode;
   inputRef?: Ref<HTMLInputElement>;
@@ -29,6 +30,7 @@ const LoginField = ({
   label,
   type = 'text',
   value,
+  placeholder,
   autoComplete,
   icon,
   inputRef,
@@ -63,10 +65,11 @@ const LoginField = ({
           name={id}
           type={type}
           value={value}
+          placeholder={placeholder}
           autoComplete={autoComplete}
           aria-invalid={validationState === 'error'}
           aria-describedby={messageId}
-          className="auth-input h-full min-w-0 flex-1 bg-transparent px-3 pl-0 text-[11px] text-[#1B3061] outline-none"
+          className={`auth-input h-full min-w-0 flex-1 bg-transparent px-3 pl-0 text-[11px] text-[#1B3061] outline-none placeholder:text-[#8a8992] ${children ? 'auth-input-custom-toggle' : ''}`}
           onBlur={onBlur}
           onChange={onChange}
           onInput={onInput}

@@ -17,7 +17,8 @@ test('dashboard placeholder uses the compact layout with a fixed sidebar offset'
   assert.match(shellSource, /pl-\[var\(--layout-sidebar-current\)\]/);
   assert.match(shellSource, /px-8/);
   assert.doesNotMatch(shellSource, /max-w-\[1440px\]/);
-  assert.match(headerSource, /placeholder="Search dashboard\.\.\."/);
+  assert.doesNotMatch(headerSource, /Search dashboard/);
+  assert.match(headerSource, /\{pageName\}/);
   assert.match(shellSource, /dashboard-container/);
 });
 
@@ -36,9 +37,6 @@ test('dashboard top chrome matches the reference screenshot sizing', async () =>
   assert.match(sidebarSource, /px-5/);
   assert.match(headerSource, /h-\[62px\]/);
   assert.match(headerSource, /border-b border-\[#e2e7ef\]/);
-  assert.match(headerSource, /max-w-\[384px\]/);
-  assert.match(headerSource, /h-\[40px\]/);
-  assert.match(headerSource, /rounded-\[7px\]/);
   assert.doesNotMatch(shellSource, /zoom:|scale\(/);
   assert.doesNotMatch(headerSource, /zoom:|scale\(/);
 });
@@ -82,14 +80,14 @@ test('sidebar exposes payments as a main category with a payment icon', async ()
   const sidebarSource = await readFile(new URL('./Sidebar.tsx', import.meta.url), 'utf8');
 
   assert.match(sidebarSource, /CreditCard/);
-  assert.match(sidebarSource, /label: 'Payments', href: '\/payment', icon: CreditCard/);
+  assert.match(sidebarSource, /label: 'Payment', href: '\/payment', icon: CreditCard/);
 });
 
 test('sidebar exposes rewards as a main category with a gift icon', async () => {
   const sidebarSource = await readFile(new URL('./Sidebar.tsx', import.meta.url), 'utf8');
 
   assert.match(sidebarSource, /Gift/);
-  assert.match(sidebarSource, /label: 'Rewards', href: '\/rewards-platform', icon: Gift/);
+  assert.match(sidebarSource, /label: 'Rewards Platform', href: '\/rewards-platform', icon: Gift/);
 });
 
 test('sidebar includes resolution center as a parent with disputes as the default route', async () => {
@@ -223,19 +221,9 @@ test('sidebar brand header reproduces reference branding', async () => {
   assert.match(sidebarSource, /bg-\[#1B3061\]/);
 });
 
-test('sidebar footer profile uses the stored admin profile details', async () => {
+test('sidebar omits its profile footer', async () => {
   const sidebarSource = await readFile(new URL('./Sidebar.tsx', import.meta.url), 'utf8');
-
-  assert.match(sidebarSource, /getStoredUserProfile/);
-  assert.match(sidebarSource, /const \[profile\] = useState\(\(\) => getStoredUserProfile\(\)\)/);
-  assert.match(sidebarSource, /const displayName = `\$\{profile\.username\}`\.trim\(\) \|\| profile\.username/);
-  assert.match(sidebarSource, /profile\.email/);
-  assert.match(sidebarSource, /profileInitials/);
-  assert.match(sidebarSource, /<Link\s+href="\/settings"/);
-  assert.match(sidebarSource, /className="sidebar-profile-row/);
-  assert.match(sidebarSource, /aria-label="Open settings"/);
-  assert.doesNotMatch(sidebarSource, />Admin User<\/span>/);
-  assert.doesNotMatch(sidebarSource, />\s*admin@alwaysvalentines\.com\s*</);
+  assert.doesNotMatch(sidebarSource, /sidebar-profile-row|getStoredUserProfile/);
 });
 
 test('sidebar toggle button sits on the edge with polished brand interactions', async () => {

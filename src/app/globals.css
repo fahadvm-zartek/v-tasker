@@ -433,3 +433,9 @@ html[data-sidebar-collapsed="true"] .sidebar-tooltip {
   background: rgba(255, 255, 255, 0.4);
 }
 
+
+/* Keep the accessible custom visibility control without Edge's second eye. */
+.auth-input-custom-toggle::-ms-reveal,
+.auth-input-custom-toggle::-ms-clear {
+  display: none;
+}

@@ -1,8 +1,8 @@
-import { ForgotPasswordCard, LoginBackground } from '../../../components/login';
+import { ForgotPasswordCard, LoginBackground, LoginFooter } from '../../../components/login';
 
 export default function ForgotPasswordPage() {
   return (
-    <LoginBackground>
+    <LoginBackground footer={<LoginFooter />}>
       <ForgotPasswordCard />
     </LoginBackground>
   );

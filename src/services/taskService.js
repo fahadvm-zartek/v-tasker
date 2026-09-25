@@ -159,6 +159,57 @@ const fetchTasksPage = async (options = {}) => {
   return normalizeTasksPage(await response.json());
 };
 
+// The listing API documents pagination/search only. Apply the admin filters to
+// the complete collection, never just the current page of results.
+const fetchFilteredTasksPage = async (options = {}) => {
+  const { authenticatedFetch, baseUrl, page = 1, pageSize = 10, search, status, state, suburb, suburbName, stateSuburbs = [], taskType, hasOffers, dateCreatedAfter, dateCreatedBefore, ...requestOptions } = options;
+  if (![search, status, state, suburb, taskType, dateCreatedAfter, dateCreatedBefore].some(Boolean) && hasOffers === undefined) {
+    return fetchTasksPage({ ...requestOptions, authenticatedFetch, baseUrl, page, pageSize });
+  }
+  const fetcher = authenticatedFetch || defaultAuthenticatedFetch;
+  const records = [];
+  let firstPayload;
+  for (let apiPage = 1; ; apiPage++) {
+    const response = await fetcher(getTasksEndpoint(baseUrl, { page: apiPage, pageSize: 100 }), {
+      ...requestOptions, method: 'GET', headers: { Accept: 'application/json', ...(requestOptions.headers || {}) },
+    });
+    if (!response.ok) throw new AuthApiError(`Tasks request failed with status ${response.status}.`, { status: response.status });
+    const payload = await response.json();
+    firstPayload ??= payload;
+    const batch = extractTasks(payload);
+    records.push(...batch);
+    if (!batch.length || (!payload.next && records.length >= Number(payload.count ?? payload.total ?? records.length))) break;
+  }
+  const normalize = (value) => String(value ?? '').trim().toLowerCase();
+  const matchesLocation = (value, candidates) => !value || candidates.some(candidate => normalize(candidate) === normalize(value));
+  const filtered = records.filter(raw => {
+    const task = normalizeTaskSummary(raw);
+    const location = raw.suburb ?? raw.location?.suburb;
+    const region = raw.state ?? location?.state ?? raw.location?.state;
+    const offerCount = Number(raw.offer_count ?? raw.offerCount ?? raw.offers_count ?? raw.offersCount ?? (Array.isArray(raw.offers) ? raw.offers.length : NaN));
+    const offersPresent = raw.has_offers === true || raw.has_offers === 'true' || offerCount > 0;
+    const offersAbsent = raw.has_offers === false || raw.has_offers === 'false' || offerCount === 0;
+    const created = String(raw.date_created ?? raw.created_at ?? raw.createdAt ?? raw.posted_at ?? '').slice(0, 10);
+    return (!search || normalize([task.id, task.title, task.poster.name, task.doer.name].join(' ')).includes(normalize(search)))
+      && (!status || normalize(task.status).replace(/[\s-]+/g, '_') === normalize(status).replace(/[\s-]+/g, '_'))
+      && (matchesLocation(suburb, [typeof location === 'object' ? undefined : location, location?.id, location?.name, raw.suburb_id, raw.suburb_name])
+        || (suburbName && matchesLocation(suburbName, [typeof location === 'string' ? location : undefined, location?.name, raw.suburb_name])))
+      && (matchesLocation(state, [typeof region === 'object' ? undefined : region, region?.id, region?.code, region?.name, raw.state_id, raw.state_name, raw.state_code])
+        || stateSuburbs.some(value => matchesLocation(value, [typeof location === 'object' ? undefined : location, location?.id, location?.name, raw.suburb_id, raw.suburb_name])))
+      && (!taskType || normalize(raw.task_type ?? raw.location_type) === normalize(taskType))
+      && (hasOffers === undefined || (hasOffers ? offersPresent : offersAbsent))
+      && (!dateCreatedAfter || (created !== '' && created >= dateCreatedAfter))
+      && (!dateCreatedBefore || (created !== '' && created <= dateCreatedBefore));
+  });
+  const start = (page - 1) * pageSize;
+  return {
+    ...normalizeTasksPage(firstPayload), count: filtered.length,
+    tasks: filtered.slice(start, start + pageSize).map((task, index) => normalizeTaskSummary(task, start + index)),
+    next: start + pageSize < filtered.length ? String(page + 1) : null,
+    previous: page > 1 ? String(page - 1) : null,
+  };
+};
+
 // ─── Task Detail Helpers ───────────────────────────────────────────────────────
 
 const readJson = async (response, fallbackMessage) => {
@@ -210,6 +261,10 @@ const normalizeTaskDetail = (task) => {
   const statusTimeline = Array.isArray(rawTimeline)
     ? rawTimeline.map(normalizeTimelineItem).filter(Boolean)
     : null;
+  const budgetValue = pickFirst(task.budget, task.price);
+  const budgetAmount = budgetValue === undefined ? NaN : Number(String(budgetValue).replace(/[$,]/g, ''));
+  const viewsValue = pickFirst(task.views_count, task.views, task.view_count, task.total_task_viewers);
+  const viewsCount = viewsValue === undefined ? NaN : Number(viewsValue);
 
   return {
     id: rawId,
@@ -218,7 +273,9 @@ const normalizeTaskDetail = (task) => {
     description: String(pickFirst(task.description, task.details, '')),
     category: String(pickFirst(task.category?.name, task.category_name, task.category, EMPTY_VALUE)),
     subcategory: String(pickFirst(task.subcategory?.name, task.sub_category_name, '')),
-    budget: String(pickFirst(task.budget, task.price, EMPTY_VALUE)),
+    budget: Number.isFinite(budgetAmount)
+      ? new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' }).format(budgetAmount)
+      : EMPTY_VALUE,
     dueDate: String(pickFirst(task.due_date, task.deadline, task.date_due, EMPTY_VALUE)),
     locationType: String(pickFirst(task.location_type, '')),
     address: String(pickFirst(task.address, task.location_address, '')),
@@ -237,7 +294,7 @@ const normalizeTaskDetail = (task) => {
       email: String(pickFirst(doer?.email, '')),
     } : null,
     images: Array.isArray(task.images) ? task.images : [],
-    viewsCount: Number(pickFirst(task.views_count, task.views, 0)) || 0,
+    viewsCount: Number.isInteger(viewsCount) && viewsCount >= 0 ? viewsCount : null,
     dateCreated: String(pickFirst(task.date_created, task.created_at, EMPTY_VALUE)),
     statusTimeline,
     raw: task,
@@ -357,6 +414,7 @@ const fetchTaskReceipt = async (id, options = {}) => {
 };
 
 module.exports = {
+  fetchFilteredTasksPage,
   TASK_API_PATHS,
   cancelTask,
   deleteTask,

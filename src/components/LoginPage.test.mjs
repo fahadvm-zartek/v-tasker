@@ -16,7 +16,7 @@ test('login route composes reusable screenshot-matched components', async () => 
     readSource('./login/index.ts'),
   ]);
 
-  assert.match(pageSource, /<LoginBackground>/);
+  assert.match(pageSource, /<LoginBackground(?:\s[^>]*)?>/);
   assert.match(pageSource, /<LoginCard\s*\/>/);
   assert.match(indexSource, /LoginBackground/);
   assert.match(indexSource, /LoginCard/);
@@ -35,12 +35,12 @@ test('login card reproduces the visible form content and controls', async () => 
   assert.match(cardSource, /Forgot Password\?/);
   assert.match(cardSource, /Sign In/);
   assert.match(cardSource, /type="submit"/);
-  assert.doesNotMatch(cardSource, /placeholder=/);
+  assert.match(cardSource, /placeholder=/);
   assert.doesNotMatch(cardSource, /name@company\.com/);
   assert.doesNotMatch(cardSource, /Username/);
 });
 
-test('login fields use navy leading icons without placeholders', async () => {
+test('login fields use navy leading icons with placeholders', async () => {
   const [cardSource, fieldSource] = await Promise.all([
     readSource('./login/LoginCard.tsx'),
     readSource('./login/LoginField.tsx'),
@@ -53,7 +53,7 @@ test('login fields use navy leading icons without placeholders', async () => {
   assert.doesNotMatch(cardSource, /icon=\{<User/);
   assert.match(fieldSource, /text-\[#1B3061\]/);
   assert.match(fieldSource, /aria-hidden="true"/);
-  assert.doesNotMatch(fieldSource, /placeholder/);
+  assert.match(fieldSource, /placeholder=\{placeholder\}/);
 });
 
 test('login validates email and password live and prevents invalid submission', async () => {
@@ -165,8 +165,8 @@ test('login styling follows the official orange and navy brand system', async ()
   assert.match(cardSource, /bg-white/);
   assert.match(cardSource, /shadow-\[0_22px_56px_rgba\(27,48,97,0\.16\)\]/);
   assert.match(cardSource, /text-\[#1B3061\]/);
-  assert.match(cardSource, /bg-\[#1B3061\]/);
-  assert.match(cardSource, /hover:bg-\[#14244d\]/);
+  assert.match(cardSource, /bg-\[#002059\]/);
+  assert.match(cardSource, /hover:bg-\[#001846\]/);
   assert.doesNotMatch(cardSource, /#08285f|#0c3478|#1f2937/);
   assert.match(fieldSource, /h-\[37px\]/);
   assert.match(fieldSource, /rounded-\[11px\]/);
@@ -219,7 +219,7 @@ test('forgot password route uses the shared auth background and reset card', asy
     readSource('./login/index.ts'),
   ]);
 
-  assert.match(pageSource, /<LoginBackground>/);
+  assert.match(pageSource, /<LoginBackground(?:\s[^>]*)?>/);
   assert.match(pageSource, /<ForgotPasswordCard\s*\/>/);
   assert.match(indexSource, /ForgotPasswordCard/);
 });
@@ -230,7 +230,7 @@ test('register route uses the shared auth background and register card', async (
     readSource('./login/index.ts'),
   ]);
 
-  assert.match(pageSource, /<LoginBackground>/);
+  assert.match(pageSource, /<LoginBackground(?:\s[^>]*)?>/);
   assert.match(pageSource, /<RegisterCard\s*\/>/);
   assert.match(indexSource, /RegisterCard/);
 });

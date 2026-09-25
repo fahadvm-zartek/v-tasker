@@ -11,7 +11,6 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  Check,
   CheckCircle2,
   ClipboardList,
   Clock3,
@@ -31,6 +30,7 @@ import {
 } from 'lucide-react';
 import { useParams } from 'next/navigation';
 import { Header, Sidebar } from '../../../../components';
+import TaskHistoryPanel from './TaskHistoryPanel';
 import { fetchUserById } from '../../../../services/userService';
 import type { UserDetail, UserSummary } from '../../../../services/userService';
 
@@ -56,28 +56,6 @@ type InfoItemData = {
 };
 
 const EMPTY_VALUE = 'N/A';
-
-type TaskHistoryRow = {
-  id: string;
-  date: string;
-  service: string;
-  doer: string;
-  doerInitials: string;
-  status: 'Completed' | 'Assigned' | 'Posted' | 'Canceled';
-  amount: string;
-  reward?: string;
-};
-
-type TaskDoerRow = {
-  id: string;
-  date: string;
-  service: string;
-  taskPoster: string;
-  status: TaskHistoryRow['status'];
-  amount: string;
-  milestone: string;
-  action?: string;
-};
 
 type PaymentHistoryRow = {
   date: string;
@@ -208,93 +186,6 @@ const tabs = [
   'Rewards History',
   'Reports',
   'Disputes',
-];
-
-const taskStatusFilterOptions = ['All', 'Assigned', 'Done', 'Pending', 'Cancelled', 'Unpaid', 'Expired', 'Dispute'];
-const dateCreatedFilterOptions = ['Today', 'Last 7 Days', 'Last 30 Days', 'Custom Range'];
-
-const taskHistoryRows: TaskHistoryRow[] = [
-  {
-    id: '#TSK-4412',
-    date: '24 Oct 2024',
-    service: 'Regular Cleaning',
-    doer: 'Alexander Sterling',
-    doerInitials: 'AS',
-    status: 'Completed',
-    amount: '$150.00',
-    reward: '+100 pts',
-  },
-  {
-    id: '#TSK-4415',
-    date: '26 Oct 2024',
-    service: 'Garden Maintenance',
-    doer: 'Maria Rodriguez',
-    doerInitials: 'MR',
-    status: 'Assigned',
-    amount: '$85.00',
-    reward: '+50 pts',
-  },
-  {
-    id: '#TSK-4428',
-    date: '30 Oct 2024',
-    service: 'Deep Cleaning',
-    doer: 'Unassigned',
-    doerInitials: '--',
-    status: 'Posted',
-    amount: '$320.00',
-    reward: '+150 pts',
-  },
-  {
-    id: '#TSK-4390',
-    date: '15 Oct 2024',
-    service: 'Window Washing',
-    doer: 'James Chen',
-    doerInitials: 'JC',
-    status: 'Canceled',
-    amount: '$0.00',
-  },
-  {
-    id: '#TSK-4355',
-    date: '02 Oct 2024',
-    service: 'Regular Cleaning',
-    doer: 'Alexander Sterling',
-    doerInitials: 'AS',
-    status: 'Completed',
-    amount: '$150.00',
-    reward: '+150 pts',
-  },
-];
-
-const taskDoerRows: TaskDoerRow[] = [
-  {
-    id: '#TSK-8921',
-    date: 'Oct 24, 2023',
-    service: 'Premium Site Inspection',
-    taskPoster: 'Sarah Jenkins',
-    status: 'Completed',
-    amount: '$145.00',
-    milestone: 'Milestone2 / Task16',
-    action: 'View Receipt',
-  },
-  {
-    id: '#TSK-8925',
-    date: 'Oct 25, 2023',
-    service: 'Emergency Repair Routing',
-    taskPoster: 'Marcus Thorne',
-    status: 'Assigned',
-    amount: '$210.00',
-    milestone: 'Milestone2 / Task 15',
-  },
-  {
-    id: '#TSK-8890',
-    date: 'Oct 22, 2023',
-    service: 'Standard Installation',
-    taskPoster: 'TechNova Inc.',
-    status: 'Completed',
-    amount: '$85.50',
-    milestone: 'Milestone1 / Task14',
-    action: 'View Receipt',
-  },
 ];
 
 const paymentHistoryRows: PaymentHistoryRow[] = [
@@ -612,254 +503,6 @@ const OverviewMetricCard = ({ metric }: { metric: OverviewMetric }) => {
         </div>
       </div>
     </Card>
-  );
-};
-
-const TaskStatusBadge = ({ status }: { status: TaskHistoryRow['status'] }) => {
-  const styles = {
-    Completed: 'bg-[#006b45] text-white',
-    Assigned: 'bg-[#059669] text-white',
-    Posted: 'bg-[#d8e1ee] text-[#17345f]',
-    Canceled: 'bg-[#e40012] text-white',
-  };
-
-  return (
-    <span className={`inline-flex h-5 items-center rounded-full px-2.5 text-[9px] font-bold uppercase leading-none ${styles[status]}`}>
-      {status}
-    </span>
-  );
-};
-
-const TaskDoer = ({ row }: { row: TaskHistoryRow }) => {
-  const isUnassigned = row.status === 'Posted';
-
-  return (
-    <div className="flex min-w-0 items-center gap-2">
-      <span
-        className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[8px] font-bold ${
-          isUnassigned ? 'bg-[#e5e9ef] text-[#98a3b3]' : 'bg-[#16324f] text-white'
-        }`}
-      >
-        {row.doerInitials}
-      </span>
-      <span className="truncate text-[13px] font-medium text-[#263348]">{row.doer}</span>
-    </div>
-  );
-};
-
-const TaskHistoryPagination = () => (
-  <div className="flex flex-wrap items-center justify-between gap-4 border-t border-[#e3eaf4] px-5 py-4">
-    <p className="text-[12px] font-medium text-[#536987]">Showing 1 to 5 of 24 tasks</p>
-    <div className="flex items-center gap-2">
-      <button type="button" className="flex h-8 w-8 items-center justify-center rounded-[4px] text-[#8a98ad]">
-        <ChevronLeft size={16} />
-      </button>
-      {[1, 2, 3].map((page) => (
-        <button
-          key={page}
-          type="button"
-          className={`h-8 w-8 rounded-[4px] text-[12px] font-bold ${
-            page === 1 ? 'bg-[#0f2d5f] text-white' : 'text-[#536987]'
-          }`}
-        >
-          {page}
-        </button>
-      ))}
-      <span className="px-2 text-[12px] font-bold text-[#75849a]">...</span>
-      <button type="button" className="h-8 w-8 rounded-[4px] text-[12px] font-bold text-[#536987]">
-        5
-      </button>
-      <button type="button" className="flex h-8 w-8 items-center justify-center rounded-[4px] text-[#536987]">
-        <ChevronRight size={16} />
-      </button>
-    </div>
-  </div>
-);
-
-const TaskPosterTable = () => (
-  <div className="overflow-hidden rounded-[6px] border border-[#dfe7f2] bg-white">
-    <div className="hidden grid-cols-[112px_118px_minmax(150px,1.2fr)_minmax(150px,1fr)_118px_100px_130px] bg-[#f7f9fc] lg:grid">
-      {['Task ID', 'Date', 'Service Name', 'Doer', 'Status', 'Amount', 'Reward Points'].map((heading) => (
-        <div key={heading} className="px-5 py-4 text-[11px] font-bold uppercase tracking-[0.04em] text-[#6f7f98]">
-          {heading}
-        </div>
-      ))}
-    </div>
-
-    <div className="divide-y divide-[#e3eaf4]">
-      {taskHistoryRows.map((row) => (
-        <div
-          key={row.id}
-          className={`grid gap-3 px-5 py-4 text-[13px] lg:grid-cols-[112px_118px_minmax(150px,1.2fr)_minmax(150px,1fr)_118px_100px_130px] lg:items-center lg:gap-0 ${
-            row.status === 'Canceled' ? 'bg-[#f4f4f6] text-[#71809a]' : 'bg-white'
-          }`}
-        >
-          <div className="font-semibold text-[#0f2d5f]">{row.id}</div>
-          <div className="text-[#536987]">{row.date}</div>
-          <div className="font-bold text-[#0f2d5f]">{row.service}</div>
-          <TaskDoer row={row} />
-          <div>
-            <TaskStatusBadge status={row.status} />
-          </div>
-          <div className="font-bold text-[#17345f]">{row.amount}</div>
-          <div className="font-bold text-[#1f9b5f]">{row.reward}</div>
-        </div>
-      ))}
-    </div>
-
-    <TaskHistoryPagination />
-  </div>
-);
-
-const TaskDoerTable = () => (
-  <div className="overflow-hidden rounded-[6px] border border-[#dfe7f2] bg-white">
-    <div className="hidden grid-cols-[112px_118px_minmax(150px,1.2fr)_minmax(150px,1fr)_118px_110px_150px_104px] bg-[#f7f9fc] lg:grid">
-      {['Task ID', 'Date', 'Service Name', 'Task Poster', 'Status', 'Amount', 'Milestone', 'Action'].map((heading) => (
-        <div key={heading} className="px-5 py-4 text-[11px] font-bold uppercase tracking-[0.04em] text-[#6f7f98]">
-          {heading}
-        </div>
-      ))}
-    </div>
-
-    <div className="divide-y divide-[#e3eaf4]">
-      {taskDoerRows.map((row) => (
-        <div
-          key={row.id}
-          className="grid gap-3 px-5 py-4 text-[13px] lg:grid-cols-[112px_118px_minmax(150px,1.2fr)_minmax(150px,1fr)_118px_110px_150px_104px] lg:items-center lg:gap-0"
-        >
-          <div className="font-semibold text-[#0f2d5f]">{row.id}</div>
-          <div className="text-[#536987]">{row.date}</div>
-          <div className="font-bold text-[#0f2d5f]">{row.service}</div>
-          <div className="font-medium text-[#263348]">{row.taskPoster}</div>
-          <div>
-            <TaskStatusBadge status={row.status} />
-          </div>
-          <div className="font-bold text-[#17345f]">{row.amount}</div>
-          <div className="font-bold text-[#24935a]">{row.milestone}</div>
-          <div>
-            {row.action ? (
-              <button type="button" className="h-8 rounded-none border border-[#b7793b] px-3 text-[11px] font-medium text-[#a46122]">
-                {row.action}
-              </button>
-            ) : null}
-          </div>
-        </div>
-      ))}
-    </div>
-
-    <TaskHistoryPagination />
-  </div>
-);
-
-const TaskHistoryFilterDropdown = ({
-  label,
-  options,
-  isOpen,
-  onToggle,
-  showCalendar = false,
-}: {
-  label: string;
-  options: string[];
-  isOpen: boolean;
-  onToggle: () => void;
-  showCalendar?: boolean;
-}) => (
-  <div className="relative w-full sm:w-[220px]">
-    <button
-      type="button"
-      onClick={onToggle}
-      className={`flex h-9 w-full items-center justify-between gap-3 rounded-[6px] border bg-[#fbfcff] px-4 text-[12px] font-medium text-[#263348] ${
-        isOpen ? 'border-[#9aa6b8] shadow-[0_1px_2px_rgba(15,23,42,0.08)]' : 'border-[#d7e1ee]'
-      }`}
-    >
-      <span>{label}</span>
-      {showCalendar ? (
-        <CalendarDays size={16} className="text-[#5f6f83]" />
-      ) : (
-        <ChevronDown size={15} className={`text-[#5f6f83] transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-      )}
-    </button>
-
-    {isOpen ? (
-      <div className="absolute left-0 top-[calc(100%+10px)] z-50 w-full overflow-hidden rounded-[6px] border border-[#c2cad6] bg-white py-1 shadow-[0_12px_24px_rgba(15,23,42,0.16)]">
-        {options.map((option, index) => {
-          const isSelected = index === 0;
-          const isCustomRange = option === 'Custom Range';
-
-          return (
-            <button
-              key={option}
-              type="button"
-              className={`flex h-9 w-full items-center justify-between px-4 text-left text-[13px] font-medium text-[#263348] ${
-                isSelected ? 'bg-[#dbe5ff] font-bold text-[#0f2d5f]' : 'hover:bg-[#f5f7fb]'
-              } ${isCustomRange ? 'border-t border-[#d7dce5]' : ''}`}
-            >
-              <span>{option}</span>
-              {isSelected ? <Check size={15} strokeWidth={2.4} className="text-[#0f2d5f]" /> : null}
-            </button>
-          );
-        })}
-      </div>
-    ) : null}
-  </div>
-);
-
-const TaskHistoryPanel = () => {
-  const [activeTaskHistoryTab, setActiveTaskHistoryTab] = useState('Task Doer');
-  const [openTaskFilter, setOpenTaskFilter] = useState<'status' | 'date' | null>('status');
-
-  return (
-    <div className="space-y-3 p-4">
-      <div className="flex items-center gap-6 border-b border-[#d9e2ef]">
-        {['Task Poster', 'Task Doer'].map((mode) => (
-          <button
-            key={mode}
-            type="button"
-            onClick={() => setActiveTaskHistoryTab(mode)}
-            className={`h-9 border-b-2 text-[12px] font-bold ${
-              activeTaskHistoryTab === mode ? 'border-[#0f2d5f] text-[#0f2d5f]' : 'border-transparent text-[#75849a]'
-            }`}
-          >
-            {mode}
-          </button>
-        ))}
-      </div>
-
-      <div className="flex flex-wrap items-center gap-3 rounded-[7px] border border-[#dfe7f2] bg-white p-4 shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
-        <label className="flex h-9 min-w-[260px] flex-1 items-center gap-3 rounded-[6px] border border-[#d7e1ee] bg-[#fbfcff] px-3 text-[#8a98ad]">
-          <Search size={16} strokeWidth={2} />
-          <input
-            className="min-w-0 flex-1 bg-transparent text-[12px] font-medium text-[#1f2a3d] outline-none placeholder:text-[#8a98ad]"
-            placeholder="Search tasks title/customer/provider..."
-          />
-        </label>
-
-        <TaskHistoryFilterDropdown
-          label="Task Status: All"
-          options={taskStatusFilterOptions}
-          isOpen={openTaskFilter === 'status'}
-          onToggle={() => setOpenTaskFilter(openTaskFilter === 'status' ? null : 'status')}
-        />
-
-        <TaskHistoryFilterDropdown
-          label="Date Created: All Time"
-          options={dateCreatedFilterOptions}
-          isOpen={openTaskFilter === 'date'}
-          onToggle={() => setOpenTaskFilter(openTaskFilter === 'date' ? null : 'date')}
-          showCalendar
-        />
-
-        <button
-          type="button"
-          className="ml-auto flex h-9 items-center gap-2 rounded-[6px] bg-[#1B3061] px-5 text-[12px] font-bold text-white shadow-[0_8px_18px_rgba(27,48,97,0.22)]"
-        >
-          <SlidersHorizontal size={15} />
-          Filter
-        </button>
-      </div>
-
-      {activeTaskHistoryTab === 'Task Doer' ? <TaskDoerTable /> : <TaskPosterTable />}
-    </div>
   );
 };
 
@@ -1929,7 +1572,7 @@ export default function UserDetailsPage() {
                 ))}
               </nav>
 
-              {activeTab === 'Task History' ? <TaskHistoryPanel /> : null}
+              {activeTab === 'Task History' ? <TaskHistoryPanel key={params.id} userId={params.id || ''} /> : null}
               {activeTab === 'Payment History' ? <PaymentHistoryPanel /> : null}
               {activeTab === 'Rewards History' ? <RewardsHistoryPanel /> : null}
               {activeTab === 'Reports' ? <ReportsPanel /> : null}

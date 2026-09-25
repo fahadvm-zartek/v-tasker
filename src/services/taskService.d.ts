@@ -4,7 +4,7 @@ export type TaskPerson = { name: string; initials: string; avatarClass: string }
 export type TaskSummary = { serial: string; id: string; routeId: string; title: string; poster: TaskPerson; doer: TaskPerson; category: string; service: string; status: string; dateCreated: string };
 export type TaskMetrics = { totalTasks: string; active: string; pending: string; noOffers: string; disputes: string; completed: string };
 export type TasksPageResult = { count: number; next: string | null; previous: string | null; tasks: TaskSummary[]; metrics: TaskMetrics };
-export type TaskRequestOptions = AuthRequestOptions & { authenticatedFetch?: typeof fetch; page?: number; pageSize?: number; search?: string; status?: string; state?: string; suburb?: string; taskType?: string; hasOffers?: boolean; dateCreatedAfter?: string; dateCreatedBefore?: string };
+export type TaskRequestOptions = AuthRequestOptions & { authenticatedFetch?: typeof fetch; signal?: AbortSignal; stateSuburbs?: string[]; suburbName?: string; page?: number; pageSize?: number; search?: string; status?: string; state?: string; suburb?: string; taskType?: string; hasOffers?: boolean; dateCreatedAfter?: string; dateCreatedBefore?: string };
 
 export type TaskDetailPerson = { id: string; name: string; email: string };
 export type TaskTimelineItem = { title: string; time: string; detail: string; status: string; tone: 'done' | 'active' | 'danger' | 'pending'; note?: string };
@@ -26,7 +26,7 @@ export type TaskDetail = {
   poster: TaskDetailPerson;
   doer: TaskDetailPerson | null;
   images: unknown[];
-  viewsCount: number;
+  viewsCount: number | null;
   dateCreated: string;
   statusTimeline?: TaskTimelineItem[] | null;
   raw: Record<string, unknown>;
@@ -73,3 +73,5 @@ export function fetchTaskQuestions(id: string | number, options?: TaskRequestOpt
 export function replyToQuestion(taskId: string | number, questionPk: string | number, data?: Record<string, unknown>, options?: TaskRequestOptions): Promise<unknown>;
 export function increaseBudget(id: string | number, data?: Record<string, unknown>, options?: TaskRequestOptions): Promise<unknown>;
 export function fetchTaskReceipt(id: string | number, options?: TaskRequestOptions): Promise<unknown>;
+
+export function fetchFilteredTasksPage(options?: TaskRequestOptions): Promise<TasksPageResult>;

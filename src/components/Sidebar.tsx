@@ -19,10 +19,8 @@ import {
   TriangleAlert,
   Users,
 } from 'lucide-react';
-import authService from '../services/authService';
 
 const SIDEBAR_STORAGE_KEY = 'v-Tasker-sidebar-collapsed';
-const { getStoredUserProfile } = authService;
 
 const getInitialSidebarCollapsed = () => {
   if (typeof window === 'undefined') {
@@ -45,10 +43,12 @@ type MenuItem = {
 
 const menuItems: MenuItem[] = [
   { label: 'Dashboard', href: '/', icon: LayoutGrid },
-  { label: 'Tasks', href: '/tasks', icon: ClipboardList },
-  { label: 'Payments', href: '/payment', icon: CreditCard },
-  { label: 'Rewards', href: '/rewards-platform', icon: Gift },
   { label: 'Users', href: '/users', icon: Users },
+  { label: 'Locations', href: '/locations', icon: MapPin },
+  { label: 'Service Categories', href: '/service-categories', icon: Tags },
+  { label: 'Tasks', href: '/tasks', icon: ClipboardList },
+  { label: 'Rewards Platform', href: '/rewards-platform', icon: Gift },
+  { label: 'Payment', href: '/payment', icon: CreditCard },
   {
     label: 'Resolution Center',
     href: '/disputes',
@@ -58,9 +58,6 @@ const menuItems: MenuItem[] = [
       { label: 'Cancellations', href: '/cancellations' },
     ],
   },
-  { label: 'Reports', href: '/reports', icon: TriangleAlert },
-  { label: 'Locations', href: '/locations', icon: MapPin },
-  { label: 'Service Categories', href: '/service-categories', icon: Tags },
   {
     label: 'Chat Moderation',
     href: '/chat-moderation/overview',
@@ -71,20 +68,14 @@ const menuItems: MenuItem[] = [
       { label: 'Rules', href: '/chat-moderation/rules' },
     ],
   },
+  { label: 'Reports', href: '/reports', icon: TriangleAlert },
   { label: 'Settings', href: '/settings', icon: Settings },
 ];
 
 const Sidebar = () => {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(getInitialSidebarCollapsed);
-  const [profile] = useState(() => getStoredUserProfile());
   const ToggleIcon = isCollapsed ? ChevronRight : ChevronLeft;
-  const displayName = `${profile.username}`.trim() || profile.username;
-  const profileInitials = displayName
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part.charAt(0).toUpperCase())
-    .join('') || 'AU';
 
   const isActivePath = (href: string) => {
     if (href === '/') return pathname === '/' || pathname === '';
@@ -236,26 +227,6 @@ const Sidebar = () => {
         })}
       </nav>
 
-      {/* Sidebar Footer Profile */}
-      <div className="shrink-0 border-t border-white/10 px-4 py-[18px]">
-        <Link
-          href="/settings"
-          aria-label="Open settings"
-          className="sidebar-profile-row flex items-center gap-3 rounded-[9px] transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#E68A2E]/30"
-        >
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#E68A2E] text-[11px] font-bold text-[#1B3061]">
-            {profileInitials}
-          </div>
-          <div
-            className="sidebar-profile-copy flex w-[170px] flex-col truncate overflow-hidden whitespace-nowrap opacity-100 transition-all duration-200"
-          >
-            <span className="truncate text-[14px] font-bold leading-5 text-white">{displayName}</span>
-            <span className="truncate text-[11px] font-normal leading-4 text-white/70">
-              {profile.email}
-            </span>
-          </div>
-        </Link>
-      </div>
     </aside>
   );
 };
